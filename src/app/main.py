@@ -135,6 +135,11 @@ def main():
             'timestamp': datetime.now().strftime('%p %I:%M')
         }]
         st.session_state.last_uploaded_audio = None
+        st.session_state.conversation_stats = {
+            'total': 0,
+            'positive': 0,
+            'negative': 0
+        }
 
     # 사이드바
     with st.sidebar:
@@ -147,6 +152,13 @@ def main():
         4. 필요한 경우 적절한 조언이나 위로를 받을 수 있습니다
         """)
 
+        # 감정 통계 표시
+        st.markdown("### 대화 통계")
+        stats = st.session_state.conversation_stats
+        st.write(f"총 대화 수: {stats['total']}")
+        st.write(f"긍정적 감정: {stats['positive']}")
+        st.write(f"부정적 감정: {stats['negative']}")
+
         # 음성 파일 업로더
         uploaded_audio = st.file_uploader("음성 파일 업로드", type=["wav"])
 
@@ -158,19 +170,33 @@ def main():
             with st.spinner("음성을 처리 중입니다..."):
                 audio_text = process_audio_input(uploaded_audio.read(), language="ko-KR")
             
-            # 변환된 텍스트를 대화 기록에 추가
             if audio_text:
+                # 음성 텍스트 감정 분석
+                chatbot = st.session_state.chatbot_service
+                emotions = chatbot.analyze_emotion(audio_text)
+                dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
+
+                # 메시지 추가
                 current_time = datetime.now().strftime('%p %I:%M')
                 st.session_state.messages.append({
                     "role": "user",
                     "content": f"[음성 파일이 업로드됨] {audio_text}",
+                    "emotion": dominant_emotion,
                     "timestamp": current_time
                 })
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": f"음성에서 인식된 텍스트는 '{audio_text}'입니다. 추가로 알려주실 것이 있나요?",
+                    "content": f"음성에서 인식된 텍스트는 '{audio_text}'이며, 감정은 '{dominant_emotion}'입니다.",
                     "timestamp": current_time
                 })
+
+                # 감정 통계 업데이트
+                st.session_state.conversation_stats['total'] += 1
+                if dominant_emotion in ['Happy', 'Neutral']:
+                    st.session_state.conversation_stats['positive'] += 1
+                elif dominant_emotion in ['Anger', 'Disgust', 'Fear', 'Sad']:
+                    st.session_state.conversation_stats['negative'] += 1
+
                 st.rerun()
 
     # 메인 채팅 영역
@@ -180,6 +206,8 @@ def main():
     for message in st.session_state.get('messages', []):
         with st.chat_message(message["role"]):
             st.write(message["content"])
+            if "emotion" in message:
+                st.caption(f"감정: {message['emotion']}")
             st.caption(f"시간: {message['timestamp']}")
 
     # 텍스트 입력창
@@ -204,6 +232,13 @@ def main():
                 "content": response,
                 "timestamp": current_time
             })
+
+            # 감정 통계 업데이트
+            st.session_state.conversation_stats['total'] += 1
+            if dominant_emotion in ['Happy', 'Neutral']:
+                st.session_state.conversation_stats['positive'] += 1
+            elif dominant_emotion in ['Anger', 'Disgust', 'Fear', 'Sad']:
+                st.session_state.conversation_stats['negative'] += 1
 
             st.rerun()
 
