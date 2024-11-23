@@ -36,12 +36,15 @@ def main():
             'positive': 0,
             'negative': 0
         }
-        st.session_state.audio_uploaded = False  # 오디오 업로드 상태
+        st.session_state.audio_uploaded = False  # 오디오 업로드 상태 초기화
+
+    # 추가 방어 코드
+    if 'audio_uploaded' not in st.session_state:
+        st.session_state.audio_uploaded = False
 
     # 사이드바
     with st.sidebar:
         st.title("감정인식 챗봇 🏠")
-        
         st.markdown("### 사용 방법")
         st.markdown("""
         1. 채팅창에 현재 기분이나 상황을 입력하세요
@@ -49,7 +52,7 @@ def main():
         3. 챗봇이 감정을 분석하고 공감적인 대화를 제공합니다
         4. 필요한 경우 적절한 조언이나 위로를 받을 수 있습니다
         """)
-        
+
         # 오디오 파일 업로더 추가
         st.markdown("### 음성 감정 분석")
         uploaded_audio = st.file_uploader("음성 파일 업로드", type=["wav", "mp3", "ogg"])
@@ -63,8 +66,17 @@ def main():
                 # 음성 감정 분석
                 with st.spinner('음성 분석 중...'):
                     audio_emotion = "Happy"  # Dummy emotion, replace with prediction logic
-                    add_message("user", "[음성 파일이 업로드됨]", emotion=audio_emotion)
-                    add_message("assistant", f"음성에서 감지된 감정은 {audio_emotion}입니다. 더 자세히 이야기해주시겠어요?")
+                    st.session_state.messages.append({
+                        "role": "user",
+                        "content": "[음성 파일이 업로드됨]",
+                        "emotion": audio_emotion,
+                        "timestamp": datetime.now().strftime('%p %I:%M')
+                    })
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": f"음성에서 감지된 감정은 {audio_emotion}입니다. 더 자세히 이야기해주시겠어요?",
+                        "timestamp": datetime.now().strftime('%p %I:%M')
+                    })
                     
                     # 통계 업데이트
                     st.session_state.conversation_stats['total'] += 1
@@ -82,6 +94,7 @@ def main():
 
             except Exception as e:
                 st.error(f"음성 처리 중 오류가 발생했습니다: {str(e)}")
+
 
         # 현재 감정 상태 표시
         if 'current_emotion' in st.session_state:
