@@ -165,17 +165,20 @@ def main():
         # 새로운 음성 파일이 업로드되었을 때만 처리
         if uploaded_audio is not None and uploaded_audio != st.session_state.last_uploaded_audio:
             st.session_state.last_uploaded_audio = uploaded_audio
-
-            # 음성을 텍스트로 변환
+        
+            # 음성을 처리
             with st.spinner("음성을 처리 중입니다..."):
-                audio_text = process_audio_input(uploaded_audio.read(), language="ko-KR")
+                audio_text, detected_language = process_audio_input(
+                    uploaded_audio.read(), 
+                    language_options=('ko-KR', 'en-US')
+                )
             
             if audio_text:
-                # 음성 텍스트 감정 분석
+                # 감정 분석
                 chatbot = st.session_state.chatbot_service
                 emotions = chatbot.analyze_emotion(audio_text)
                 dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
-
+        
                 # 메시지 추가
                 current_time = datetime.now().strftime('%p %I:%M')
                 st.session_state.messages.append({
@@ -186,18 +189,19 @@ def main():
                 })
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": f"음성에서 인식된 텍스트는 '{audio_text}'이며, 감정은 '{dominant_emotion}'입니다.",
+                    "content": f"음성에서 인식된 텍스트는 '{audio_text}'이며, 감정은 '{dominant_emotion}'입니다. (언어: {detected_language})",
                     "timestamp": current_time
                 })
-
+        
                 # 감정 통계 업데이트
                 st.session_state.conversation_stats['total'] += 1
                 if dominant_emotion in ['Happy', 'Neutral']:
                     st.session_state.conversation_stats['positive'] += 1
                 elif dominant_emotion in ['Anger', 'Disgust', 'Fear', 'Sad']:
                     st.session_state.conversation_stats['negative'] += 1
-
+        
                 st.rerun()
+
 
     # 메인 채팅 영역
     st.title("채팅")
