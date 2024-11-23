@@ -98,8 +98,6 @@ def main():
             'content': "안녕하세요! 오늘 하루는 어떠셨나요? 기분이나 감정을 자유롭게 이야기해주세요. 텍스트로 입력하거나 음성 파일을 업로드해주세요. 😊",
             'timestamp': datetime.now().strftime('%p %I:%M')
         }]
-        st.session_state.audio_processing = False  # 음성 처리 상태 초기화
-        st.session_state.audio_message = None  # 음성 메시지 초기화
 
     # 사이드바
     with st.sidebar:
@@ -114,11 +112,8 @@ def main():
 
         # 음성 파일 업로더
         uploaded_audio = st.file_uploader("음성 파일 업로드", type=["wav", "mp3", "ogg"])
-        if uploaded_audio is not None and not st.session_state.audio_processing:
+        if uploaded_audio is not None:
             try:
-                # 음성 처리 시작 플래그
-                st.session_state.audio_processing = True
-
                 # 임시 파일로 저장
                 with open("temp_audio.wav", "wb") as f:
                     f.write(uploaded_audio.getbuffer())
@@ -128,26 +123,27 @@ def main():
                     audio_emotion = predict_audio_emotion("temp_audio.wav")
 
                 if audio_emotion:
-                    # 음성 메시지 저장
-                    st.session_state.audio_message = [
-                        {
-                            "role": "user",
-                            "content": "[음성 파일이 업로드됨]",
-                            "emotion": audio_emotion,
-                            "timestamp": datetime.now().strftime('%p %I:%M')
-                        },
-                        {
-                            "role": "assistant",
-                            "content": f"음성에서 감지된 감정은 {audio_emotion}입니다. 더 자세히 이야기해주시겠어요?",
-                            "timestamp": datetime.now().strftime('%p %I:%M')
-                        }
-                    ]
-            except Exception as e:
-                st.error(f"음성 처리 중 오류가 발생했습니다: {str(e)}")
-            finally:
-                # 음성 처리 완료 후 파일 삭제
+                    current_time = datetime.now().strftime('%p %I:%M')
+                    
+                    # 음성 메시지를 대화 기록에 추가
+                    st.session_state.messages.append({
+                        "role": "user",
+                        "content": "[음성 파일이 업로드됨]",
+                        "emotion": audio_emotion,
+                        "timestamp": current_time
+                    })
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": f"음성에서 감지된 감정은 {audio_emotion}입니다. 더 자세히 이야기해주시겠어요?",
+                        "timestamp": current_time
+                    })
+
+                # 음성 파일 삭제
                 if os.path.exists("temp_audio.wav"):
                     os.remove("temp_audio.wav")
+
+            except Exception as e:
+                st.error(f"음성 처리 중 오류가 발생했습니다: {str(e)}")
 
     # 메인 채팅 영역
     st.title("채팅")
@@ -160,19 +156,9 @@ def main():
                 st.caption(f"감정: {message['emotion']}")
             st.caption(f"시간: {message['timestamp']}")
 
-    # 새로 업로드된 음성 메시지 출력
-    if st.session_state.audio_message:
-        for audio_msg in st.session_state.audio_message:
-            with st.chat_message(audio_msg["role"]):
-                st.write(audio_msg["content"])
-                if "emotion" in audio_msg:
-                    st.caption(f"감정: {audio_msg['emotion']}")
-                st.caption(f"시간: {audio_msg['timestamp']}")
-
     # 텍스트 입력창
     if prompt := st.chat_input("메시지를 입력하세요..."):
         if prompt.strip():
-            # 텍스트 메시지 분석 및 응답
             chatbot = st.session_state.chatbot_service
             emotions = chatbot.analyze_emotion(prompt)
             dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
@@ -180,7 +166,7 @@ def main():
 
             current_time = datetime.now().strftime('%p %I:%M')
 
-            # 메시지 저장
+            # 텍스트 메시지를 대화 기록에 추가
             st.session_state.messages.append({
                 "role": "user",
                 "content": prompt,
@@ -193,11 +179,7 @@ def main():
                 "timestamp": current_time
             })
 
-            # 음성 상태 초기화
-            st.session_state.audio_processing = False
-            st.session_state.audio_message = None
-
-            # 새 메시지 렌더링
+            # 렌더링 갱신
             st.rerun()
 
 if __name__ == "__main__":
