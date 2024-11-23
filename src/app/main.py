@@ -81,6 +81,11 @@ def add_message(role, content, emotion=None):
         "timestamp": current_time
     })
 
+def init_session_state(key, default_value):
+    """Session state 초기화 함수."""
+    if key not in st.session_state:
+        st.session_state[key] = default_value
+
 def main():
     st.set_page_config(
         page_title="감정인식 챗봇",
@@ -90,15 +95,14 @@ def main():
     )
 
     # 세션 상태 초기화
-    if 'initialized' not in st.session_state:
-        st.session_state.initialized = True
-        st.session_state.chatbot_service = ChatbotService(OpenAIConfig())
-        st.session_state.messages = [{
-            'role': 'assistant',
-            'content': "안녕하세요! 오늘 하루는 어떠셨나요? 기분이나 감정을 자유롭게 이야기해주세요. 텍스트로 입력하거나 음성 파일을 업로드해주세요. 😊",
-            'timestamp': datetime.now().strftime('%p %I:%M')
-        }]
-        st.session_state.audio_uploaded = False  # 음성 업로드 상태 초기화
+    init_session_state('initialized', True)
+    init_session_state('chatbot_service', ChatbotService(OpenAIConfig()))
+    init_session_state('messages', [{
+        'role': 'assistant',
+        'content': "안녕하세요! 오늘 하루는 어떠셨나요? 기분이나 감정을 자유롭게 이야기해주세요. 텍스트로 입력하거나 음성 파일을 업로드해주세요. 😊",
+        'timestamp': datetime.now().strftime('%p %I:%M')
+    }])
+    init_session_state('audio_uploaded', False)  # 음성 업로드 상태 초기화
 
     # 사이드바
     with st.sidebar:
