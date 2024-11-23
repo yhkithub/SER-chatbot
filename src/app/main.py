@@ -144,15 +144,21 @@ def main():
                 # 음성 파일 삭제
                 if os.path.exists(temp_file_path):
                     os.remove(temp_file_path)
+                    st.write("파일 삭제 성공: temp_audio.wav")
+                else:
+                    st.write("파일이 이미 삭제되었거나 존재하지 않습니다: temp_audio.wav")
 
                 # 음성 업로드 상태 처리 완료
                 st.session_state.audio_uploaded = True
 
-                # 파일 업로더 상태 초기화
-                st.rerun()  # 최신 Streamlit에서 사용되는 함수
+                # 업로드 상태 초기화를 위해 앱 재실행
+                st.rerun()
 
             except Exception as e:
                 st.error(f"음성 처리 중 오류가 발생했습니다: {str(e)}")
+                # 삭제 실패 시에도 파일 제거 시도
+                if os.path.exists(temp_file_path):
+                    os.remove(temp_file_path)
 
     # 메인 채팅 영역
     st.title("채팅")
