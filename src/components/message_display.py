@@ -1,21 +1,5 @@
 import streamlit as st
 
-def get_emotion_color(emotion: str) -> str:
-    """감정에 따른 배경색 반환"""
-    emotion_colors = {
-        # 긍정적 감정
-        'Happy': '#90EE90',  # 밝은 초록색
-        'Neutral': '#FEE500',  # 기본 노란색
-        
-        # 부정적 감정
-        'Sad': '#ADD8E6',  # 연한 파란색
-        'Anger': '#FFB6C1',  # 연한 빨간색
-        'Fear': '#DDA0DD',  # 연한 보라색
-        'Disgust': '#F0E68C'  # 연한 황토색
-    }
-    
-    return emotion_colors.get(emotion, '#FEE500')  # 기본값은 노란색
-
 def display_message(message: dict):
     """채팅 메시지 표시"""
     role = message.get('role', '')
@@ -45,11 +29,10 @@ def display_message(message: dict):
     
     # 사용자 메시지 (오른쪽)
     else:
-        background_color = get_emotion_color(emotion)
         st.markdown(f"""
             <div style="display: flex; justify-content: flex-end; margin: 10px 0;">
                 <div style="
-                    background-color: {background_color};
+                    background-color: #FEE500;
                     color: black;
                     padding: 12px 16px;
                     border-radius: 12px;
