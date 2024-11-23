@@ -19,3 +19,4 @@ librosa
 pydub
 ffmpeg-python
 transformers
+SpeechRecognition
