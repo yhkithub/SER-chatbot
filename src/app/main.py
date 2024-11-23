@@ -98,6 +98,7 @@ def main():
             'content': "안녕하세요! 오늘 하루는 어떠셨나요? 기분이나 감정을 자유롭게 이야기해주세요. 텍스트로 입력하거나 음성 파일을 업로드해주세요. 😊",
             'timestamp': datetime.now().strftime('%p %I:%M')
         }]
+        st.session_state.audio_uploaded = False  # 음성 처리 상태 초기화
 
     # 사이드바
     with st.sidebar:
@@ -112,7 +113,7 @@ def main():
 
         # 음성 파일 업로더
         uploaded_audio = st.file_uploader("음성 파일 업로드", type=["wav", "mp3", "ogg"])
-        if uploaded_audio is not None:
+        if uploaded_audio is not None and not st.session_state.audio_uploaded:
             try:
                 # 임시 파일로 저장
                 with open("temp_audio.wav", "wb") as f:
@@ -141,6 +142,9 @@ def main():
                 # 음성 파일 삭제
                 if os.path.exists("temp_audio.wav"):
                     os.remove("temp_audio.wav")
+
+                # 음성 업로드 처리 완료 상태로 설정
+                st.session_state.audio_uploaded = True
 
             except Exception as e:
                 st.error(f"음성 처리 중 오류가 발생했습니다: {str(e)}")
@@ -178,6 +182,9 @@ def main():
                 "content": response,
                 "timestamp": current_time
             })
+
+            # 음성 업로드 상태 초기화
+            st.session_state.audio_uploaded = False
 
             # 렌더링 갱신
             st.rerun()
