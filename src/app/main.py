@@ -104,8 +104,8 @@ def main():
             'positive': 0,
             'negative': 0
         }
-        st.session_state.audio_uploaded = False  # 오디오 업로드 상태 초기화
-    
+        st.session_state.audio_message = None  # 오디오 메시지 상태
+
     # 사이드바
     with st.sidebar:
         st.title("감정인식 챗봇 🏠")
@@ -122,7 +122,7 @@ def main():
         st.markdown("### 음성 감정 분석")
         uploaded_audio = st.file_uploader("음성 파일 업로드", type=["wav", "mp3", "ogg"])
         
-        if uploaded_audio is not None and not st.session_state.audio_uploaded:
+        if uploaded_audio is not None:
             try:
                 # 임시 파일로 저장
                 with open("temp_audio.wav", "wb") as f:
@@ -133,9 +133,23 @@ def main():
                     audio_emotion = predict_audio_emotion("temp_audio.wav")
 
                 if audio_emotion:
-                    add_message("user", "[음성 파일이 업로드됨]", emotion=audio_emotion)
-                    add_message("assistant", f"음성에서 감지된 감정은 {audio_emotion}입니다. 더 자세히 이야기해주시겠어요?")
-                    
+                    current_time = datetime.now().strftime('%p %I:%M')
+
+                    # 오디오 메시지를 별도 상태로 저장
+                    st.session_state.audio_message = [
+                        {
+                            "role": "user",
+                            "content": "[음성 파일이 업로드됨]",
+                            "emotion": audio_emotion,
+                            "timestamp": current_time
+                        },
+                        {
+                            "role": "assistant",
+                            "content": f"음성에서 감지된 감정은 {audio_emotion}입니다. 더 자세히 이야기해주시겠어요?",
+                            "timestamp": current_time
+                        }
+                    ]
+
                     # 현재 감정 상태 업데이트
                     st.session_state.current_emotion = f"음성 감정: {audio_emotion}"
                     
@@ -149,9 +163,6 @@ def main():
                 # 임시 파일 삭제
                 if os.path.exists("temp_audio.wav"):
                     os.remove("temp_audio.wav")
-
-                # 오디오 업로드 상태 업데이트
-                st.session_state.audio_uploaded = True
 
             except Exception as e:
                 st.error(f"음성 처리 중 오류가 발생했습니다: {str(e)}")
@@ -176,7 +187,16 @@ def main():
             if "emotion" in message:
                 st.caption(f"감정: {message['emotion']}")
             st.caption(f"시간: {message['timestamp']}")
-    
+
+    # 오디오 메시지 표시
+    if st.session_state.audio_message:
+        for audio_msg in st.session_state.audio_message:
+            with st.chat_message(audio_msg["role"]):
+                st.write(audio_msg["content"])
+                if "emotion" in audio_msg:
+                    st.caption(f"감정: {audio_msg['emotion']}")
+                st.caption(f"시간: {audio_msg['timestamp']}")
+
     # 텍스트 입력창
     if prompt := st.chat_input("메시지를 입력하세요..."):
         if prompt.strip():
@@ -185,11 +205,23 @@ def main():
             dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
             response = chatbot.get_response(prompt)
             
-            add_message("user", prompt, emotion=dominant_emotion)
-            add_message("assistant", response)
-            
-            # 오디오 업로드 상태 초기화
-            st.session_state.audio_uploaded = False
+            current_time = datetime.now().strftime('%p %I:%M')
+
+            # 텍스트 메시지 추가
+            st.session_state.messages.append({
+                "role": "user",
+                "content": prompt,
+                "emotion": dominant_emotion,
+                "timestamp": current_time
+            })
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": response,
+                "timestamp": current_time
+            })
+
+            # 오디오 메시지 초기화 (더 이상 전송되지 않도록 설정)
+            st.session_state.audio_message = None
             
             st.rerun()
 
