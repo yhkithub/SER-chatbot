@@ -149,7 +149,7 @@ def main():
                 st.session_state.audio_uploaded = True
 
                 # 파일 업로더 상태 초기화
-                st.experimental_rerun()  # 앱을 다시 렌더링하여 업로드 상태 초기화
+                st.rerun()  # 최신 Streamlit에서 사용되는 함수
 
             except Exception as e:
                 st.error(f"음성 처리 중 오류가 발생했습니다: {str(e)}")
