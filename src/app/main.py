@@ -134,27 +134,29 @@ def main():
             'timestamp': datetime.now().strftime('%p %I:%M')
         }]
         st.session_state.last_uploaded_audio = None
+        st.session_state.conversation_stats = {
+            'total': 0,
+            'positive': 0,
+            'negative': 0
+        }
 
     # 사이드바
     with st.sidebar:
         st.title("감정인식 챗봇 🏠")
-        
         st.markdown("### 사용 방법")
         st.markdown("""
         1. 채팅창에 현재 기분이나 상황을 입력하세요
-        2. 챗봇이 감정을 분석하고 공감적인 대화를 제공합니다
-        3. 필요한 경우 적절한 조언이나 위로를 받을 수 있습니다
+        2. 또는 음성 파일을 업로드하여 감정을 분석할 수 있습니다
+        3. 챗봇이 감정을 분석하고 공감적인 대화를 제공합니다
+        4. 필요한 경우 적절한 조언이나 위로를 받을 수 있습니다
         """)
-        
-        if 'current_emotion' in st.session_state:
-            st.markdown("### 현재 감정 상태")
-            st.write(st.session_state.current_emotion)
-        
-        if 'conversation_stats' in st.session_state:
-            st.markdown("### 대화 통계")
-            st.write(f"총 대화 수: {st.session_state.conversation_stats.get('total', 0)}")
-            st.write(f"긍정적 감정: {st.session_state.conversation_stats.get('positive', 0)}")
-            st.write(f"부정적 감정: {st.session_state.conversation_stats.get('negative', 0)}")
+
+        # 대화 통계 표시
+        st.markdown("### 대화 통계")
+        stats = st.session_state.conversation_stats
+        st.write(f"총 대화 수: {stats['total']}")
+        st.write(f"긍정적 감정: {stats['positive']}")
+        st.write(f"부정적 감정: {stats['negative']}")
 
         # 음성 파일 업로더
         uploaded_audio = st.file_uploader("음성 파일 업로드", type=["wav", "mp3", "ogg"])
@@ -199,7 +201,59 @@ def main():
                 "timestamp": current_time
             })
 
+            # 통계 업데이트
+            st.session_state.conversation_stats['total'] += 1
+            if dominant_emotion in ['Happy', 'Neutral']:
+                st.session_state.conversation_stats['positive'] += 1
+            elif dominant_emotion in ['Anger', 'Disgust', 'Fear', 'Sad']:
+                st.session_state.conversation_stats['negative'] += 1
+
             st.rerun()
+
+
+def handle_audio_upload(uploaded_audio):
+    """Handle audio file upload and emotion prediction."""
+    try:
+        temp_file_path = "temp_audio.wav"
+        with open(temp_file_path, "wb") as f:
+            f.write(uploaded_audio.getbuffer())
+
+        with st.spinner('음성 분석 중...'):
+            audio_emotion = predict_audio_emotion(temp_file_path)
+
+        if audio_emotion:
+            current_time = datetime.now().strftime('%p %I:%M')
+
+            # 음성 메시지를 대화 기록에 추가
+            st.session_state.messages.append({
+                "role": "user",
+                "content": "[음성 파일이 업로드됨]",
+                "emotion": audio_emotion,
+                "timestamp": current_time
+            })
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": f"음성에서 감지된 감정은 {audio_emotion}입니다. 더 자세히 이야기해주시겠어요?",
+                "timestamp": current_time
+            })
+
+            # 통계 업데이트
+            st.session_state.conversation_stats['total'] += 1
+            if audio_emotion in ['Happy', 'Neutral']:
+                st.session_state.conversation_stats['positive'] += 1
+            elif audio_emotion in ['Anger', 'Disgust', 'Fear', 'Sad']:
+                st.session_state.conversation_stats['negative'] += 1
+
+        # 파일 삭제
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        
+        return True
+    except Exception as e:
+        st.error(f"음성 처리 중 오류가 발생했습니다: {str(e)}")
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        return False
 
 if __name__ == "__main__":
     main()
