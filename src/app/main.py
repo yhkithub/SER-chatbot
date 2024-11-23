@@ -98,8 +98,8 @@ def main():
             'content': "안녕하세요! 오늘 하루는 어떠셨나요? 기분이나 감정을 자유롭게 이야기해주세요. 텍스트로 입력하거나 음성 파일을 업로드해주세요. 😊",
             'timestamp': datetime.now().strftime('%p %I:%M')
         }]
-        st.session_state.audio_processing = False
-        st.session_state.audio_message = None
+        st.session_state.audio_processing = False  # 음성 처리 상태 초기화
+        st.session_state.audio_message = None  # 음성 메시지 초기화
 
     # 사이드바
     with st.sidebar:
