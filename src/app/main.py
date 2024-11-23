@@ -138,13 +138,23 @@ def main():
     # 사이드바
     with st.sidebar:
         st.title("감정인식 챗봇 🏠")
+        
         st.markdown("### 사용 방법")
         st.markdown("""
         1. 채팅창에 현재 기분이나 상황을 입력하세요
-        2. 또는 음성 파일을 업로드하여 감정을 분석할 수 있습니다
-        3. 챗봇이 감정을 분석하고 공감적인 대화를 제공합니다
-        4. 필요한 경우 적절한 조언이나 위로를 받을 수 있습니다
+        2. 챗봇이 감정을 분석하고 공감적인 대화를 제공합니다
+        3. 필요한 경우 적절한 조언이나 위로를 받을 수 있습니다
         """)
+        
+        if 'current_emotion' in st.session_state:
+            st.markdown("### 현재 감정 상태")
+            st.write(st.session_state.current_emotion)
+        
+        if 'conversation_stats' in st.session_state:
+            st.markdown("### 대화 통계")
+            st.write(f"총 대화 수: {st.session_state.conversation_stats.get('total', 0)}")
+            st.write(f"긍정적 감정: {st.session_state.conversation_stats.get('positive', 0)}")
+            st.write(f"부정적 감정: {st.session_state.conversation_stats.get('negative', 0)}")
 
         # 음성 파일 업로더
         uploaded_audio = st.file_uploader("음성 파일 업로드", type=["wav", "mp3", "ogg"])
