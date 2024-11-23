@@ -81,11 +81,6 @@ def add_message(role, content, emotion=None):
         "timestamp": current_time
     })
 
-def init_session_state(key, default_value):
-    """Session state 초기화 함수."""
-    if key not in st.session_state:
-        st.session_state[key] = default_value
-
 def main():
     st.set_page_config(
         page_title="감정인식 챗봇",
@@ -95,14 +90,15 @@ def main():
     )
 
     # 세션 상태 초기화
-    init_session_state('initialized', True)
-    init_session_state('chatbot_service', ChatbotService(OpenAIConfig()))
-    init_session_state('messages', [{
-        'role': 'assistant',
-        'content': "안녕하세요! 오늘 하루는 어떠셨나요? 기분이나 감정을 자유롭게 이야기해주세요. 텍스트로 입력하거나 음성 파일을 업로드해주세요. 😊",
-        'timestamp': datetime.now().strftime('%p %I:%M')
-    }])
-    init_session_state('audio_uploaded', False)  # 음성 업로드 상태 초기화
+    if 'initialized' not in st.session_state:
+        st.session_state.initialized = True
+        st.session_state.chatbot_service = ChatbotService(OpenAIConfig())
+        st.session_state.messages = [{
+            'role': 'assistant',
+            'content': "안녕하세요! 오늘 하루는 어떠셨나요? 기분이나 감정을 자유롭게 이야기해주세요. 텍스트로 입력하거나 음성 파일을 업로드해주세요. 😊",
+            'timestamp': datetime.now().strftime('%p %I:%M')
+        }]
+        st.session_state.audio_uploaded = False  # 음성 업로드 상태 초기화
 
     # 사이드바
     with st.sidebar:
@@ -117,19 +113,21 @@ def main():
 
         # 음성 파일 업로더
         uploaded_audio = st.file_uploader("음성 파일 업로드", type=["wav", "mp3", "ogg"])
+
         if uploaded_audio is not None and not st.session_state.audio_uploaded:
             try:
                 # 임시 파일로 저장
-                with open("temp_audio.wav", "wb") as f:
+                temp_file_path = "temp_audio.wav"
+                with open(temp_file_path, "wb") as f:
                     f.write(uploaded_audio.getbuffer())
 
                 # 음성 분석
                 with st.spinner('음성 분석 중...'):
-                    audio_emotion = predict_audio_emotion("temp_audio.wav")
+                    audio_emotion = predict_audio_emotion(temp_file_path)
 
                 if audio_emotion:
                     current_time = datetime.now().strftime('%p %I:%M')
-                    
+
                     # 음성 메시지를 대화 기록에 추가
                     st.session_state.messages.append({
                         "role": "user",
@@ -144,11 +142,14 @@ def main():
                     })
 
                 # 음성 파일 삭제
-                if os.path.exists("temp_audio.wav"):
-                    os.remove("temp_audio.wav")
+                if os.path.exists(temp_file_path):
+                    os.remove(temp_file_path)
 
-                # 음성 업로드 처리 완료 상태로 설정
+                # 음성 업로드 상태 처리 완료
                 st.session_state.audio_uploaded = True
+
+                # 파일 업로더 상태 초기화
+                st.experimental_rerun()  # 앱을 다시 렌더링하여 업로드 상태 초기화
 
             except Exception as e:
                 st.error(f"음성 처리 중 오류가 발생했습니다: {str(e)}")
@@ -195,3 +196,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
