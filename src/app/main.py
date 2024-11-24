@@ -191,6 +191,7 @@ def main():
 
         # 현재 감정 상태 표시
         if 'current_emotion' in st.session_state:
+            st.markdown("### 현재 감정 상태")
             emotion = st.session_state.current_emotion
             emotion_color = get_emotion_color(emotion)  # 감정에 따른 색상 가져오기
             st.markdown(f"""
@@ -200,11 +201,6 @@ def main():
                 gap: 8px;
                 margin-top: 16px;
             ">
-                <span style="
-                    font-weight: bold;
-                    font-size: 1rem;
-                    color: black;
-                ">현재 감정:</span>
                 <span style="
                     background-color: {emotion_color};
                     color: white;
