@@ -16,7 +16,7 @@ def get_emotion_color(emotion: str) -> str:
     return emotion_colors.get(emotion, 'linear-gradient(135deg, #FEE500, #FFE44D)')
 
 def display_message(message: dict):
-    """Display chat message with emotion-based styling"""
+    """Display chat message with emotion-based styling."""
     role = message.get('role', '')
     content = message.get('content', '')
     timestamp = message.get('timestamp', '')
@@ -47,11 +47,11 @@ def display_message(message: dict):
             </div>
         """, unsafe_allow_html=True)
     
-    # User message (right side, with user icon on the right)
+    # User message (right side with icon on the right)
     else:
         background = get_emotion_color(emotion)
         st.markdown(f"""
-            <div style="display: flex; justify-content: flex-end; margin: 16px 0; align-items: flex-end;">
+            <div style="display: flex; justify-content: flex-end; margin: 16px 0;">
                 <div style="
                     background: {background};
                     color: black;
@@ -61,44 +61,32 @@ def display_message(message: dict):
                     max-width: 80%;
                     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                     position: relative;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
                 ">
-                    <div style="font-size: 1rem; line-height: 1.4;">{content}</div>
+                    <div style="flex-grow: 1; text-align: left; font-size: 1rem; line-height: 1.4;">{content}</div>
                     <div style="
+                        background-color: rgba(0,0,0,0.1);
+                        border-radius: 50%;
+                        width: 36px;
+                        height: 36px;
                         display: flex;
-                        justify-content: flex-end;
+                        justify-content: center;
                         align-items: center;
-                        gap: 8px;
-                        margin-top: 6px;
                     ">
-                        <span style="
-                            font-size: 0.75rem;
-                            background-color: rgba(0,0,0,0.1);
-                            padding: 2px 8px;
-                            border-radius: 12px;
-                            font-weight: 500;
-                        ">{emotion}</span>
-                        <span style="font-size: 0.75rem; color: #333;">{timestamp}</span>
+                        <img src="https://via.placeholder.com/36" alt="User Icon" style="border-radius: 50%; width: 100%; height: 100%;">
                     </div>
                 </div>
-                <!-- 사용자 아이콘 -->
                 <div style="
-                    background-color: #87CEEB;  /* Light blue for user icon */
-                    width: 40px;
-                    height: 40px;
-                    border-radius: 50%;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    margin-left: 8px;
-                    font-size: 1.2rem;
-                    font-weight: bold;
-                    color: white;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                ">
-                    😊
-                </div>
+                    font-size: 0.75rem;
+                    color: #333;
+                    margin-top: 4px;
+                    text-align: right;
+                ">{timestamp}</div>
             </div>
         """, unsafe_allow_html=True)
+
 
 # Add custom CSS for chat container
 def apply_chat_styles():
