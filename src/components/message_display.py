@@ -103,28 +103,13 @@ def apply_chat_styles():
     """Apply custom styles for chat interface"""
     st.markdown("""
         <style>
-        /* 전체 화면 설정 */
+        /* 기본 앱 스타일: 전체 화면 사용 */
         .stApp {
+            max-width: 100%;
             margin: 0;
             padding: 0;
-            display: flex;
         }
-
-        /* 사이드바 설정 */
-        section[data-testid="stSidebar"] {
-            position: fixed;
-            left: 0;
-            top: 0;
-            height: 100vh;
-            z-index: 1;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-        }
-
-        /* 사이드바 콘텐츠 안쪽 패딩 조정 */
-        section[data-testid="stSidebar"] .block-container {
-            padding: 1rem;
-        }
-
+        
         /* 메시지 컨테이너 스타일 */
         .element-container {
             margin: 0 !important;
@@ -134,25 +119,29 @@ def apply_chat_styles():
         .chat-message {
             margin: 0.5rem 0;
         }
-
+        
+        .stMarkdown {
+            width: 100%;
+        }
+        
         /* 사용자 메시지 오른쪽 정렬 */
         .st-emotion-cache-janbn0 {
             flex-direction: row-reverse;
             text-align: right;
         }
-
+        
         /* 사용자 메시지 컨테이너 오른쪽 정렬 */
         .st-emotion-cache-janbn0 .st-emotion-cache-1gulkj3 {
             margin-left: auto;
             margin-right: 0;
         }
-
+        
         /* 챗봇 메시지는 왼쪽 정렬 유지 */
         .st-emotion-cache-1uhf5eu {
             flex-direction: row;
             text-align: left;
         }
-
+        
         /* 채팅 입력창 스타일 */
         .stTextInput input {
             background-color: #2D2D2D;
@@ -161,7 +150,7 @@ def apply_chat_styles():
             border-radius: 0.5rem;
             padding: 0.8rem;
         }
-
+        
         /* 버튼 스타일 */
         .stButton button {
             background-color: #007AFF;
@@ -170,28 +159,27 @@ def apply_chat_styles():
             border-radius: 0.5rem;
             padding: 0.8rem 1.5rem;
         }
-
+        
         /* 스크롤바 스타일 */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
-
+        
         ::-webkit-scrollbar-track {
             background: #1E1E1E;
         }
-
+        
         ::-webkit-scrollbar-thumb {
             background: #4A4A4A;
             border-radius: 4px;
         }
-
+        
         ::-webkit-scrollbar-thumb:hover {
             background: #5A5A5A;
         }
         </style>
     """, unsafe_allow_html=True)
-
 def get_emotion_class(emotion: str) -> str:
     """감정에 따른 스타일 클래스 반환"""
     positive_emotions = {'joy', 'love', 'surprise'}
