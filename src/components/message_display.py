@@ -47,11 +47,11 @@ def display_message(message: dict):
             </div>
         """, unsafe_allow_html=True)
     
-    # User message (right side)
+    # User message (right side, with user icon on the right)
     else:
         background = get_emotion_color(emotion)
         st.markdown(f"""
-            <div style="display: flex; justify-content: flex-end; margin: 16px 0;">
+            <div style="display: flex; justify-content: flex-end; margin: 16px 0; align-items: flex-end;">
                 <div style="
                     background: {background};
                     color: black;
@@ -79,6 +79,23 @@ def display_message(message: dict):
                         ">{emotion}</span>
                         <span style="font-size: 0.75rem; color: #333;">{timestamp}</span>
                     </div>
+                </div>
+                <!-- 사용자 아이콘 -->
+                <div style="
+                    background-color: #87CEEB;  /* Light blue for user icon */
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    margin-left: 8px;
+                    font-size: 1.2rem;
+                    font-weight: bold;
+                    color: white;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                ">
+                    😊
                 </div>
             </div>
         """, unsafe_allow_html=True)
