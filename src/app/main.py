@@ -27,8 +27,6 @@ EMOTION_MAPPING = {
 def process_audio(waveform, target_sample_rate=16000, target_length=16000):
     """Process audio to correct format."""
     try:
-        st.write(f"Original waveform shape: {waveform.shape}")
-        
         if waveform.shape[0] > 1:  # 다채널 오디오인 경우 평균 처리
             waveform = torch.mean(waveform, dim=0, keepdim=True)
 
@@ -45,11 +43,11 @@ def process_audio(waveform, target_sample_rate=16000, target_length=16000):
             start = (waveform.shape[1] - target_length) // 2
             waveform = waveform[:, start:start + target_length]
 
-        st.write(f"Processed waveform shape: {waveform.shape}")
         return waveform
     except Exception as e:
         st.error(f"Error in audio processing: {str(e)}")
         return None
+
 
 def predict_audio_emotion(audio_path):
     """Predict emotion from audio file."""
