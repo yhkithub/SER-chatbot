@@ -9,8 +9,8 @@ def convert_audio_to_text(wav_audio_data, language='ko-KR'):
         # WAV 데이터를 AudioSegment로 변환
         audio = AudioSegment.from_file(io.BytesIO(wav_audio_data), format="wav")
 
-        # 파일 정보 출력 (디버깅용)
-        st.write(f"Audio Info: Channels={audio.channels}, Frame Rate={audio.frame_rate}, Duration={len(audio)}ms")
+        # 파일 정보 디버깅 (콘솔 출력)
+        print(f"Audio Info: Channels={audio.channels}, Frame Rate={audio.frame_rate}, Duration={len(audio)}ms")
 
         # 오디오를 16kHz, 모노로 표준화
         audio = audio.set_frame_rate(16000).set_channels(1)
@@ -32,11 +32,11 @@ def convert_audio_to_text(wav_audio_data, language='ko-KR'):
         text = recognizer.recognize_google(audio_data, language=language)
         return text
     except sr.UnknownValueError:
-        st.error("음성을 텍스트로 변환할 수 없습니다. 음성이 명확하지 않을 수 있습니다.")
         return None
     except Exception as e:
-        st.error(f"음성 인식 중 오류가 발생했습니다: {str(e)}")
+        print(f"음성 인식 중 오류 발생: {e}")  # 콘솔에 오류 출력
         return None
+
 
 def process_audio_input(wav_audio_data, language_options=('ko-KR', 'en-US')):
     """음성 입력을 처리하고 결과를 반환하는 함수"""
