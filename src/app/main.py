@@ -173,34 +173,37 @@ def main():
                     language_options=('ko-KR', 'en-US')  # 한국어와 영어 모두 시도
                 )
             
-            if audio_text:
-                # 감정 분석
-                chatbot = st.session_state.chatbot_service
-                emotions = chatbot.analyze_emotion(audio_text)
-                dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
+            # 텍스트가 없는 경우 기본 메시지 설정
+            if not audio_text:
+                audio_text = "음성을 텍스트로 변환할 수 없습니다."
         
-                # 메시지 추가
-                current_time = datetime.now().strftime('%p %I:%M')
-                st.session_state.messages.append({
-                    "role": "user",
-                    "content": f"[음성 파일이 업로드됨] {audio_text}",
-                    "emotion": dominant_emotion,
-                    "timestamp": current_time
-                })
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "content": f"음성에서 인식된 텍스트는 '{audio_text}'이며, 감정은 '{dominant_emotion}'입니다. (언어: {detected_language})",
-                    "timestamp": current_time
-                })
+            # 감정 분석
+            chatbot = st.session_state.chatbot_service
+            emotions = chatbot.analyze_emotion(audio_text)
+            dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
         
-                # 감정 통계 업데이트
-                st.session_state.conversation_stats['total'] += 1
-                if dominant_emotion in ['Happy', 'Neutral']:
-                    st.session_state.conversation_stats['positive'] += 1
-                elif dominant_emotion in ['Anger', 'Disgust', 'Fear', 'Sad']:
-                    st.session_state.conversation_stats['negative'] += 1
+            # 메시지 추가
+            current_time = datetime.now().strftime('%p %I:%M')
+            st.session_state.messages.append({
+                "role": "user",
+                "content": f"[음성 파일이 업로드됨] {audio_text}",
+                "emotion": dominant_emotion,
+                "timestamp": current_time
+            })
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": f"음성에서 감정은 '{dominant_emotion}'으로 분석되었습니다.",
+                "timestamp": current_time
+            })
         
-                st.rerun()
+            # 감정 통계 업데이트
+            st.session_state.conversation_stats['total'] += 1
+            if dominant_emotion in ['Happy', 'Neutral']:
+                st.session_state.conversation_stats['positive'] += 1
+            elif dominant_emotion in ['Anger', 'Disgust', 'Fear', 'Sad']:
+                st.session_state.conversation_stats['negative'] += 1
+        
+            st.rerun()
 
 
 
