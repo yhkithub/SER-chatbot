@@ -73,6 +73,13 @@ def predict_audio_emotion(audio_path):
         st.error(f"Error in emotion prediction: {str(e)}")
         return None
 
+def update_conversation_stats(emotion: str):
+    """Update conversation statistics based on the detected emotion."""
+    st.session_state.conversation_stats['total'] += 1
+    if emotion in ['Happy', 'Neutral']:
+        st.session_state.conversation_stats['positive'] += 1
+    elif emotion in ['Anger', 'Disgust', 'Fear', 'Sad']:
+        st.session_state.conversation_stats['negative'] += 1
 
 def handle_audio_upload(uploaded_audio):
     """Handle audio file upload and emotion prediction."""
@@ -121,6 +128,10 @@ def handle_audio_upload(uploaded_audio):
                     "timestamp": current_time
                 })
 
+            # 통계 업데이트
+            if audio_emotion:
+                update_conversation_stats(audio_emotion)
+
         # 파일 삭제
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
@@ -131,7 +142,6 @@ def handle_audio_upload(uploaded_audio):
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
         return False
-
 
 def main():
     st.set_page_config(
@@ -214,12 +224,8 @@ def main():
                 "timestamp": current_time
             })
 
-            # 감정 통계 업데이트
-            st.session_state.conversation_stats['total'] += 1
-            if dominant_emotion in ['Happy', 'Neutral']:
-                st.session_state.conversation_stats['positive'] += 1
-            elif dominant_emotion in ['Anger', 'Disgust', 'Fear', 'Sad']:
-                st.session_state.conversation_stats['negative'] += 1
+            # 통계 업데이트
+            update_conversation_stats(dominant_emotion)
 
             st.rerun()
 
