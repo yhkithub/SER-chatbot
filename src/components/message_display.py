@@ -48,41 +48,48 @@ def display_message(message: dict):
         st.markdown(f"""
             <div style="display: flex; justify-content: flex-end; align-items: center; margin: 16px 0;">
                 <div style="
-                    background: {background};
-                    color: black;
-                    padding: 12px 18px;
-                    border-radius: 18px;
-                    border-top-right-radius: 4px;
-                    max-width: 80%;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    position: relative;
-                    margin-right: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-end;
+                    gap: 8px;
                 ">
-                    <div style="font-size: 1rem; line-height: 1.4;">{content}</div>
                     <div style="
-                        display: flex;
-                        justify-content: flex-end;
-                        align-items: center;
-                        gap: 8px;
-                        margin-top: 6px;
+                        background: {background};
+                        color: black;
+                        padding: 12px 18px;
+                        border-radius: 18px;
+                        border-top-right-radius: 4px;
+                        max-width: 80%;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        position: relative;
                     ">
-                        <span style="
-                            font-size: 0.75rem;
-                            background-color: rgba(0,0,0,0.1);
-                            padding: 2px 8px;
-                            border-radius: 12px;
-                            font-weight: 500;
-                        ">{emotion}</span>
-                        <span style="font-size: 0.75rem; color: #333;">{timestamp}</span>
+                        <div style="font-size: 1rem; line-height: 1.4;">{content}</div>
+                        <div style="
+                            display: flex;
+                            justify-content: flex-end;
+                            align-items: center;
+                            gap: 8px;
+                            margin-top: 6px;
+                        ">
+                            <span style="
+                                font-size: 0.75rem;
+                                background-color: rgba(0,0,0,0.1);
+                                padding: 2px 8px;
+                                border-radius: 12px;
+                                font-weight: 500;
+                            ">{emotion}</span>
+                            <span style="font-size: 0.75rem; color: #333;">{timestamp}</span>
+                        </div>
                     </div>
+                    <img src="https://via.placeholder.com/32" alt="user-icon" style="
+                        border-radius: 50%;
+                        width: 32px;
+                        height: 32px;
+                    ">
                 </div>
-                <img src="https://via.placeholder.com/32" alt="user-icon" style="
-                    border-radius: 50%;
-                    width: 32px;
-                    height: 32px;
-                ">
             </div>
         """, unsafe_allow_html=True)
+
 
 
 
