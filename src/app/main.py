@@ -48,7 +48,6 @@ def process_audio(waveform, target_sample_rate=16000, target_length=16000):
         st.error(f"Error in audio processing: {str(e)}")
         return None
 
-
 def predict_audio_emotion(audio_path):
     """Predict emotion from audio file."""
     try:
@@ -73,15 +72,6 @@ def predict_audio_emotion(audio_path):
         st.error(f"Error in emotion prediction: {str(e)}")
         return None
 
-def add_message(role, content, emotion=None):
-    """Add a new message to the chat."""
-    current_time = datetime.now().strftime('%p %I:%M')
-    st.session_state.messages.append({
-        "role": role,
-        "content": content,
-        "emotion": emotion,
-        "timestamp": current_time
-    })
 
 def handle_audio_upload(uploaded_audio):
     """Handle audio file upload and emotion prediction."""
@@ -104,7 +94,7 @@ def handle_audio_upload(uploaded_audio):
             current_time = datetime.now().strftime('%p %I:%M')
 
             if audio_text:
-                # 텍스트가 인식된 경우 텍스트와 감정 표시
+                # 텍스트와 감정 표시
                 st.session_state.messages.append({
                     "role": "user",
                     "content": f"[음성 파일이 업로드됨] {audio_text}",
@@ -140,6 +130,7 @@ def handle_audio_upload(uploaded_audio):
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
         return False
+
 
 def main():
     st.set_page_config(
