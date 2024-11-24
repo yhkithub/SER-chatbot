@@ -98,6 +98,7 @@ def display_message(message: dict):
             </div>
         """, unsafe_allow_html=True)
 
+# Add custom CSS for chat container
 def apply_chat_styles():
     st.markdown("""
         <style>
@@ -106,85 +107,22 @@ def apply_chat_styles():
             margin: 0 auto;
         }
         
-        /* 채팅 메시지 컨테이너 기본 스타일 */
-        [data-testid="stChatMessage"] {
-            display: flex;
-            flex-direction: row !important;
-            align-items: start;
-            gap: 1rem;
-            padding: 0.5rem 1rem;
-            width: 100%;
-        }
-        
-        /* 사용자 메시지 컨테이너 반전 */
-        [data-testid="stChatMessage"][data-role="user"] {
-            flex-direction: row-reverse !important;
-        }
-        
-        /* 메시지 내용 컨테이너 */
-        [data-testid="stChatMessage"] > div {
-            display: flex;
-            align-items: start;
-            gap: 1rem;
-        }
-        
-        /* 사용자 메시지 내용 컨테이너 반전 */
-        [data-testid="stChatMessage"][data-role="user"] > div {
-            flex-direction: row-reverse;
-            margin-left: auto;
-        }
-        
-        /* 아바타 이미지 컨테이너 */
-        [data-testid="stChatMessage"] div:has(img) {
-            order: 1;
-        }
-        
-        /* 사용자 메시지의 아바타 이미지 컨테이너 */
-        [data-testid="stChatMessage"][data-role="user"] div:has(img) {
-            order: 2;
-            margin-left: 0;
-            margin-right: 0;
-        }
-        
-        /* 메시지 텍스트 컨테이너 */
-        [data-testid="stMarkdownContainer"] {
-            order: 2;
+        .element-container {
             margin: 0 !important;
+            padding: 0 !important;
         }
         
-        /* 사용자 메시지의 텍스트 컨테이너 */
-        [data-testid="stChatMessage"][data-role="user"] [data-testid="stMarkdownContainer"] {
-            order: 1;
-            margin-right: auto !important;
+        .chat-message {
+            margin: 0.5rem 0;
         }
         
-        /* 캡션 스타일링 */
-        [data-testid="stChatMessageCaption"] {
-            text-align: right;
-        }
-
-        /* 메시지 내용 여백 조정 */
-        [data-testid="stMarkdownContainer"] > p {
-            margin-bottom: 0;
-        }
-
-        /* 스크롤바 스타일링 */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-            background-color: #1E1E1E;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background-color: #4A4A4A;
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background-color: #5A5A5A;
+        .stMarkdown {
+            width: 100%;
         }
         </style>
     """, unsafe_allow_html=True)
+
+
 def get_emotion_class(emotion: str) -> str:
     """감정에 따른 스타일 클래스 반환"""
     positive_emotions = {'joy', 'love', 'surprise'}
