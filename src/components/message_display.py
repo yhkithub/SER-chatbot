@@ -62,6 +62,7 @@ def display_message(message: dict):
                         max-width: 80%;
                         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                         position: relative;
+                        margin-right: 8px;
                     ">
                         <div style="font-size: 1rem; line-height: 1.4;">{content}</div>
                         <div style="
@@ -81,18 +82,23 @@ def display_message(message: dict):
                             <span style="font-size: 0.75rem; color: #333;">{timestamp}</span>
                         </div>
                     </div>
-                    <img src="https://via.placeholder.com/32" alt="user-icon" style="
-                        border-radius: 50%;
+                    <div style="
+                        background: #FF0000;
                         width: 32px;
                         height: 32px;
+                        border-radius: 50%;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        color: white;
+                        font-weight: bold;
+                        text-align: center;
                     ">
+                        U
+                    </div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
-
-
-
-
 
 # Add custom CSS for chat container
 def apply_chat_styles():
