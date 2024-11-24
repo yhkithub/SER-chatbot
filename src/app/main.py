@@ -65,12 +65,8 @@ def predict_audio_emotion(audio_path):
         with torch.no_grad():
             outputs = model(**inputs)
         
-        # 모델 출력 디버깅
-        st.write(f"Model logits: {outputs.logits}")
         predicted_class_idx = outputs.logits.argmax(-1).item()
-        st.write(f"Predicted class index: {predicted_class_idx}")
 
-        # 감정 매핑 확인
         if predicted_class_idx in EMOTION_MAPPING:
             return EMOTION_MAPPING[predicted_class_idx]
         return None
