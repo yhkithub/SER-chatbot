@@ -15,30 +15,32 @@ def get_emotion_color(emotion: str) -> str:
     }
     return emotion_colors.get(emotion, 'linear-gradient(135deg, #FEE500, #FFE44D)')
 
+def get_emotion_color(emotion: str) -> str:
+    """Return background color based on emotion"""
+    emotion_colors = {
+        # Positive emotions
+        'Happy': 'linear-gradient(135deg, #90EE90, #98FB98)',  # Light green gradient
+        'Neutral': 'linear-gradient(135deg, #FEE500, #FFE44D)',  # Yellow gradient
+        
+        # Negative emotions
+        'Sad': 'linear-gradient(135deg, #ADD8E6, #87CEEB)',  # Light blue gradient
+        'Anger': 'linear-gradient(135deg, #FFB6C1, #FFA07A)',  # Light red gradient
+        'Fear': 'linear-gradient(135deg, #DDA0DD, #D8BFD8)',  # Light purple gradient
+        'Disgust': 'linear-gradient(135deg, #F0E68C, #EEE8AA)'  # Light khaki gradient
+    }
+    return emotion_colors.get(emotion, 'linear-gradient(135deg, #FEE500, #FFE44D)')
+
 def display_message(message: dict):
-    """Display chat message with emotion-based styling."""
+    """Display chat message with emotion-based styling"""
     role = message.get('role', '')
     content = message.get('content', '')
     timestamp = message.get('timestamp', '')
     emotion = message.get('emotion', '')
-
-    # Assistant message (왼쪽 정렬)
+    
+    # Assistant message (left side)
     if role == "assistant":
         st.markdown(f"""
-            <div style="display: flex; justify-content: flex-start; align-items: center; margin: 16px 0;">
-                <div style="
-                    width: 32px;
-                    height: 32px;
-                    background-color: #FFCC00;
-                    border-radius: 50%;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    font-size: 16px;
-                    font-weight: bold;
-                    color: black;
-                    margin-right: 8px;
-                ">🤖</div>
+            <div style="display: flex; justify-content: flex-start; margin: 16px 0;">
                 <div style="
                     background-color: #F0F0F0;
                     color: black;
@@ -50,16 +52,21 @@ def display_message(message: dict):
                     position: relative;
                 ">
                     <div style="font-size: 1rem; line-height: 1.4;">{content}</div>
-                    <div style="font-size: 0.75rem; color: #666; margin-top: 6px; text-align: right;">{timestamp}</div>
+                    <div style="
+                        font-size: 0.75rem;
+                        color: #666;
+                        margin-top: 6px;
+                        text-align: right;
+                    ">{timestamp}</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
-
-    # User message (오른쪽 정렬)
+    
+    # User message (right side)
     else:
         background = get_emotion_color(emotion)
         st.markdown(f"""
-            <div style="display: flex; justify-content: flex-end; align-items: center; margin: 16px 0;">
+            <div style="display: flex; justify-content: flex-end; margin: 16px 0;">
                 <div style="
                     background: {background};
                     color: black;
@@ -69,7 +76,6 @@ def display_message(message: dict):
                     max-width: 80%;
                     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                     position: relative;
-                    margin-right: 8px;
                 ">
                     <div style="font-size: 1rem; line-height: 1.4;">{content}</div>
                     <div style="
@@ -89,24 +95,10 @@ def display_message(message: dict):
                         <span style="font-size: 0.75rem; color: #333;">{timestamp}</span>
                     </div>
                 </div>
-                <div style="
-                    width: 32px;
-                    height: 32px;
-                    background-color: #FF6666;
-                    border-radius: 50%;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    font-size: 16px;
-                    font-weight: bold;
-                    color: white;
-                    margin-left: 8px;
-                ">🙂</div>
             </div>
         """, unsafe_allow_html=True)
 
 
-# Add custom CSS for chat container
 def apply_chat_styles():
     st.markdown("""
         <style>
@@ -126,6 +118,47 @@ def apply_chat_styles():
         
         .stMarkdown {
             width: 100%;
+        }
+
+        /* 사용자 메시지 아이콘 위치 조정 */
+        [data-testid="stChatMessage"] {
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+        }
+
+        /* 사용자 메시지일 때 아이콘 오른쪽으로 */
+        [data-testid="stChatMessage"][data-role="user"] {
+            flex-direction: row-reverse;
+        }
+
+        /* 사용자 메시지의 내용 정렬 */
+        [data-testid="stChatMessage"][data-role="user"] > div {
+            flex-direction: row-reverse;
+        }
+
+        /* 아이콘 컨테이너 스타일링 */
+        [data-testid="stChatMessage"] > div:first-child {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* 메시지 내용 여백 조정 */
+        [data-testid="stMarkdownContainer"] > p {
+            margin-bottom: 0;
+        }
+
+        /* 사용자 아이콘 margin 조정 */
+        [data-testid="stChatMessage"][data-role="user"] div:first-child {
+            margin-left: 0;
+            margin-right: 0.5rem;
+        }
+
+        /* 어시스턴트 아이콘 margin 조정 */
+        [data-testid="stChatMessage"][data-role="assistant"] div:first-child {
+            margin-right: 0.5rem;
+            margin-left: 0;
         }
         </style>
     """, unsafe_allow_html=True)
