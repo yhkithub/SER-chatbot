@@ -8,6 +8,7 @@ import torchaudio.transforms as T
 from src.core.services.chatbot_service import ChatbotService
 from src.app.config import OpenAIConfig
 from src.utils.audio_handler import process_audio_input
+from src.components.message_display import apply_chat_styles, display_message
 
 # 음성 감정 인식 모델 설정
 model_name = "forwarder1121/ast-finetuned-model"
@@ -191,10 +192,6 @@ def main():
     for message in st.session_state.get('messages', []):
         with st.chat_message(message["role"]):
             display_message(message)
-            st.write(message["content"])
-            if "emotion" in message:
-                st.caption(f"감정: {message['emotion']}")
-            st.caption(f"시간: {message['timestamp']}")
 
     # 텍스트 입력창
     if prompt := st.chat_input("메시지를 입력하세요..."):
