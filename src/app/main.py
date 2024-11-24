@@ -109,29 +109,30 @@ def handle_audio_upload(uploaded_audio):
             # 메시지 추가
             current_time = datetime.now().strftime('%p %I:%M')
 
-            if audio_emotion:
-                # 감정 결과만 표시
+            if audio_text:
+                # 텍스트가 인식된 경우 텍스트와 감정 표시
                 st.session_state.messages.append({
                     "role": "user",
-                    "content": "[음성 파일이 업로드됨]",
-                    "emotion": audio_emotion,
+                    "content": f"[음성 파일이 업로드됨] {audio_text}",
+                    "emotion": audio_emotion if audio_emotion else "Unknown",
                     "timestamp": current_time
                 })
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": f"음성에서 감지된 감정은 '{audio_emotion}'입니다.",
+                    "content": f"음성에서 감지된 텍스트는 '{audio_text}'이며, 감정은 '{audio_emotion}'입니다." if audio_emotion else "음성을 텍스트로 변환했지만 감정을 분석할 수 없었습니다.",
                     "timestamp": current_time
                 })
             else:
+                # 텍스트 변환 실패 시 감정만 표시
                 st.session_state.messages.append({
                     "role": "user",
                     "content": "[음성 파일이 업로드됨]",
-                    "emotion": "Unknown",
+                    "emotion": audio_emotion if audio_emotion else "Unknown",
                     "timestamp": current_time
                 })
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": "음성을 처리했지만 감정을 분석할 수 없었습니다.",
+                    "content": f"음성에서 감지된 감정은 '{audio_emotion}'입니다." if audio_emotion else "음성을 처리했지만 감정을 분석할 수 없었습니다.",
                     "timestamp": current_time
                 })
 
@@ -145,8 +146,6 @@ def handle_audio_upload(uploaded_audio):
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
         return False
-
-
 
 def main():
     st.set_page_config(
