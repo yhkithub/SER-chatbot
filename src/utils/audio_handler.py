@@ -41,18 +41,15 @@ def convert_audio_to_text(wav_audio_data, language='ko-KR'):
 def process_audio_input(wav_audio_data, language_options=('ko-KR', 'en-US')):
     """음성 입력을 처리하고 결과를 반환하는 함수"""
     if wav_audio_data is not None:
-        # 음성 재생 가능하도록 표시
-        st.sidebar.audio(wav_audio_data, format='audio/wav')
-
-        # 음성을 텍스트로 변환 (다중 언어 지원)
+        # 음성 변환
         for language in language_options:
-            st.write(f"Trying language: {language}")
-            text = convert_audio_to_text(wav_audio_data, language=language)
-            if text:
-                st.sidebar.success(f"인식된 텍스트: {text} (언어: {language})")
-                return text, language
+            try:
+                # 음성 인식
+                audio_text = convert_audio_to_text(wav_audio_data, language=language)
+                if audio_text:
+                    return audio_text, language
+            except Exception:
+                continue  # 다음 언어로 시도
 
-        # 텍스트 변환 실패 시 로그 메시지 출력
-        st.sidebar.error("음성을 텍스트로 변환하지 못했습니다.")
+        # 텍스트 변환 실패
         return None, None
-
