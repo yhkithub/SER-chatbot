@@ -83,6 +83,30 @@ def display_message(message: dict):
             </div>
         """, unsafe_allow_html=True)
 
+# Add custom CSS for chat container
+def apply_chat_styles():
+    st.markdown("""
+        <style>
+        .stApp {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .element-container {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        .chat-message {
+            margin: 0.5rem 0;
+        }
+        
+        .stMarkdown {
+            width: 100%;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
 def get_emotion_class(emotion: str) -> str:
     """감정에 따른 스타일 클래스 반환"""
     positive_emotions = {'joy', 'love', 'surprise'}
