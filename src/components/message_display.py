@@ -1,19 +1,34 @@
 import streamlit as st
 
+# def get_emotion_color(emotion: str) -> str:
+#     """Return background color based on emotion"""
+#     emotion_colors = {
+#         # Positive emotions
+#         'Happy': 'linear-gradient(135deg, #90EE90, #98FB98)',  # Light green gradient
+#         'Neutral': 'linear-gradient(135deg, #FEE500, #FFE44D)',  # Yellow gradient
+        
+#         # Negative emotions
+#         'Sad': 'linear-gradient(135deg, #ADD8E6, #87CEEB)',  # Light blue gradient
+#         'Anger': 'linear-gradient(135deg, #FFB6C1, #FFA07A)',  # Light red gradient
+#         'Fear': 'linear-gradient(135deg, #DDA0DD, #D8BFD8)',  # Light purple gradient
+#         'Disgust': 'linear-gradient(135deg, #F0E68C, #EEE8AA)'  # Light khaki gradient
+#     }
+#     return emotion_colors.get(emotion, 'linear-gradient(135deg, #FEE500, #FFE44D)')
+
 def get_emotion_color(emotion: str) -> str:
-    """Return background color based on emotion"""
+    """Return solid background color based on emotion"""
     emotion_colors = {
         # Positive emotions
-        'Happy': 'linear-gradient(135deg, #90EE90, #98FB98)',  # Light green gradient
-        'Neutral': 'linear-gradient(135deg, #FEE500, #FFE44D)',  # Yellow gradient
-        
+        'Happy': '#90EE90',  # Light green
+        'Neutral': '#FFD700',  # Gold
+
         # Negative emotions
-        'Sad': 'linear-gradient(135deg, #ADD8E6, #87CEEB)',  # Light blue gradient
-        'Anger': 'linear-gradient(135deg, #FFB6C1, #FFA07A)',  # Light red gradient
-        'Fear': 'linear-gradient(135deg, #DDA0DD, #D8BFD8)',  # Light purple gradient
-        'Disgust': 'linear-gradient(135deg, #F0E68C, #EEE8AA)'  # Light khaki gradient
+        'Sad': '#ADD8E6',  # Light blue
+        'Anger': '#FF6347',  # Tomato
+        'Fear': '#DDA0DD',  # Plum
+        'Disgust': '#F0E68C'  # Khaki
     }
-    return emotion_colors.get(emotion, 'linear-gradient(135deg, #FEE500, #FFE44D)')
+    return emotion_colors.get(emotion, '#FFD700')  # Default to gold for neutral
 
 def display_message(message: dict):
     """Display chat message with emotion-based styling"""
