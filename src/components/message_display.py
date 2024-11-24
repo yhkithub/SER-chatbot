@@ -37,55 +37,61 @@ def display_message(message: dict):
                     position: relative;
                 ">
                     <div style="font-size: 1rem; line-height: 1.4;">{content}</div>
-                    <div style="
-                        font-size: 0.75rem;
-                        color: #666;
-                        margin-top: 6px;
-                        text-align: right;
-                    ">{timestamp}</div>
+                    <div style="font-size: 0.75rem; color: #666; margin-top: 6px; text-align: right;">{timestamp}</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
     
-    # User message (right side with icon on the right)
+    # User message (right side)
     else:
         background = get_emotion_color(emotion)
         st.markdown(f"""
             <div style="display: flex; justify-content: flex-end; margin: 16px 0;">
                 <div style="
-                    background: {background};
-                    color: black;
-                    padding: 12px 18px;
-                    border-radius: 18px;
-                    border-top-right-radius: 4px;
-                    max-width: 80%;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    position: relative;
                     display: flex;
-                    align-items: center;
-                    gap: 12px;
+                    flex-direction: column;
+                    align-items: flex-end;
                 ">
-                    <div style="flex-grow: 1; text-align: left; font-size: 1rem; line-height: 1.4;">{content}</div>
                     <div style="
-                        background-color: rgba(0,0,0,0.1);
-                        border-radius: 50%;
-                        width: 36px;
-                        height: 36px;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
+                        background: {background};
+                        color: black;
+                        padding: 12px 18px;
+                        border-radius: 18px;
+                        border-top-right-radius: 4px;
+                        max-width: 80%;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        position: relative;
                     ">
-                        <img src="https://via.placeholder.com/36" alt="User Icon" style="border-radius: 50%; width: 100%; height: 100%;">
+                        <div style="font-size: 1rem; line-height: 1.4;">{content}</div>
+                        <div style="
+                            display: flex;
+                            justify-content: flex-end;
+                            align-items: center;
+                            gap: 8px;
+                            margin-top: 6px;
+                        ">
+                            <span style="
+                                font-size: 0.75rem;
+                                background-color: rgba(0,0,0,0.1);
+                                padding: 2px 8px;
+                                border-radius: 12px;
+                                font-weight: 500;
+                            ">{emotion}</span>
+                            <span style="font-size: 0.75rem; color: #333;">{timestamp}</span>
+                        </div>
+                    </div>
+                    <div style="
+                        display: flex;
+                        justify-content: flex-end;
+                        align-items: center;
+                        margin-top: 4px;
+                    ">
+                        <img src="https://via.placeholder.com/24" alt="user-icon" style="border-radius: 50%; margin-left: 8px;">
                     </div>
                 </div>
-                <div style="
-                    font-size: 0.75rem;
-                    color: #333;
-                    margin-top: 4px;
-                    text-align: right;
-                ">{timestamp}</div>
             </div>
         """, unsafe_allow_html=True)
+
 
 
 # Add custom CSS for chat container
