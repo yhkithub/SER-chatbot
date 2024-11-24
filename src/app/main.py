@@ -140,6 +140,9 @@ def main():
         initial_sidebar_state="expanded"
     )
 
+    # 커스텀 스타일 적용
+    apply_chat_styles()
+
     # 세션 상태 초기화
     if 'initialized' not in st.session_state:
         st.session_state.initialized = True
@@ -184,8 +187,10 @@ def main():
     # 메인 채팅 영역
     st.title("채팅")
 
+    # 메시지 표시
     for message in st.session_state.get('messages', []):
         with st.chat_message(message["role"]):
+            display_message(message)
             st.write(message["content"])
             if "emotion" in message:
                 st.caption(f"감정: {message['emotion']}")
