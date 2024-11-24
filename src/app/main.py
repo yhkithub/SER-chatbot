@@ -103,26 +103,37 @@ def handle_audio_upload(uploaded_audio):
                 language_options=('ko-KR', 'en-US')
             )
             
-            if not audio_text:
-                audio_text = "음성을 텍스트로 변환할 수 없습니다."
-
             # 감정 분석
             audio_emotion = predict_audio_emotion(temp_file_path)
 
             # 메시지 추가
             current_time = datetime.now().strftime('%p %I:%M')
-            st.session_state.messages.append({
-                "role": "user",
-                "content": f"[음성 파일이 업로드됨] {audio_text}",
-                "emotion": audio_emotion if audio_emotion else "Unknown",
-                "timestamp": current_time
-            })
 
-            st.session_state.messages.append({
-                "role": "assistant",
-                "content": f"음성에서 감지된 텍스트는 '{audio_text}'이며, 감정은 '{audio_emotion}'입니다." if audio_emotion else f"음성을 텍스트로 변환했지만 감정을 분석할 수 없었습니다.",
-                "timestamp": current_time
-            })
+            if audio_emotion:
+                # 감정 결과만 표시
+                st.session_state.messages.append({
+                    "role": "user",
+                    "content": "[음성 파일이 업로드됨]",
+                    "emotion": audio_emotion,
+                    "timestamp": current_time
+                })
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": f"음성에서 감지된 감정은 '{audio_emotion}'입니다.",
+                    "timestamp": current_time
+                })
+            else:
+                st.session_state.messages.append({
+                    "role": "user",
+                    "content": "[음성 파일이 업로드됨]",
+                    "emotion": "Unknown",
+                    "timestamp": current_time
+                })
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": "음성을 처리했지만 감정을 분석할 수 없었습니다.",
+                    "timestamp": current_time
+                })
 
         # 파일 삭제
         if os.path.exists(temp_file_path):
@@ -134,6 +145,7 @@ def handle_audio_upload(uploaded_audio):
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
         return False
+
 
 
 def main():
