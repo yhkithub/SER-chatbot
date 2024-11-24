@@ -139,7 +139,7 @@ def handle_audio_upload(uploaded_audio):
             os.remove(temp_file_path)
 
         # 새로고침으로 즉시 반영
-        st.experimental_rerun()
+        st.rerun()
 
     except Exception as e:
         st.error(f"음성 처리 중 오류가 발생했습니다: {str(e)}")
