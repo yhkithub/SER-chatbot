@@ -27,119 +27,95 @@ EMOTION_MAPPING = {
     5: "Sad"
 }
 
-def process_audio_emotion(audio_path):
-    """통합된 오디오 처리 및 감정 분석 함수"""
+def process_audio(waveform, target_sample_rate=16000, target_length=16000):
+    """Process audio to correct format."""
     try:
-        # 오디오 로드
+        if waveform.shape[0] > 1:  # 다채널 오디오인 경우 평균 처리
+            waveform = torch.mean(waveform, dim=0, keepdim=True)
+
+        if waveform.shape[1] > 0:
+            current_sample_rate = target_sample_rate
+            if current_sample_rate != target_sample_rate:
+                resampler = T.Resample(orig_freq=current_sample_rate, new_freq=target_sample_rate)
+                waveform = resampler(waveform)
+
+        if waveform.shape[1] < target_length:
+            padding_length = target_length - waveform.shape[1]
+            waveform = torch.nn.functional.pad(waveform, (0, padding_length))
+        else:
+            start = (waveform.shape[1] - target_length) // 2
+            waveform = waveform[:, start:start + target_length]
+
+        return waveform
+    except Exception as e:
+        st.error(f"Error in audio processing: {str(e)}")
+        return None
+
+def predict_emotion(audio_path):
+    """
+    감정 분석을 수행
+    """
+    try:
         waveform, sample_rate = torchaudio.load(audio_path)
-        
-        # 모노 채널로 변환
-        if waveform.shape[0] > 1:
-            waveform = waveform.mean(dim=0, keepdim=True)
-        
+
         # 16kHz로 리샘플링
         if sample_rate != 16000:
             resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
             waveform = resampler(waveform)
-        
-        # 입력 길이 조정
-        target_length = 16000  # 1초 길이
-        if waveform.shape[1] > target_length:
-            waveform = waveform[:, :target_length]
-        elif waveform.shape[1] < target_length:
-            padding = torch.zeros(1, target_length - waveform.shape[1])
-            waveform = torch.cat([waveform, padding], dim=1)
-        
-        # 감정 분석
+
+        # 감정 분석 모델 입력
         inputs = processor(waveform.squeeze(), sampling_rate=16000, return_tensors="pt")
-        
         with torch.no_grad():
             outputs = model(**inputs)
-        
+
         predicted_class_idx = outputs.logits.argmax(-1).item()
         emotion = EMOTION_MAPPING.get(predicted_class_idx, "Unknown")
-        
+        print(f"[DEBUG] 감정 분석 결과: {emotion}")
         return emotion
-    
     except Exception as e:
-        st.error(f"음성 감정 분석 중 오류 발생: {e}")
+        print(f"[ERROR] 감정 분석 중 오류 발생: {e}")
         return None
 
 def handle_audio_upload(uploaded_audio):
-    """음성 파일 업로드 처리"""
-    temp_file_path = "temp_audio.wav"
-    
+    """
+    음성 파일 업로드 핸들러
+    """
     try:
-        # 임시 파일로 저장
-        with open(temp_file_path, "wb") as f:
-            f.write(uploaded_audio.getbuffer())
-        
-        # 파일 존재 및 크기 확인
-        if not os.path.exists(temp_file_path):
-            st.error("[ERROR] 임시 파일이 생성되지 않았습니다.")
-            return
-        
-        file_size = os.path.getsize(temp_file_path)
-        if file_size == 0:
-            st.error("[ERROR] 업로드된 음성 파일이 비어 있습니다.")
-            return
-        
-        print(f"[DEBUG] 임시 파일 생성 완료: {temp_file_path}, 크기: {file_size} 바이트")
-        
-        # 감정 분석
-        with st.spinner("음성 분석 중..."):
-            # 텍스트 변환
-            audio_text = process_audio_input(uploaded_audio.read())
-            
-            # 감정 분석
-            audio_emotion = process_audio_emotion(temp_file_path)
-            
-            if audio_emotion:
-                # 메시지 업데이트
-                current_time = datetime.now().strftime('%p %I:%M')
-                st.session_state.current_emotion = audio_emotion
-                
-                if audio_text:
-                    st.session_state.messages.append({
-                        "role": "user",
-                        "content": f"[음성 파일] 텍스트: {audio_text}",
-                        "emotion": audio_emotion,
-                        "timestamp": current_time
-                    })
-                    st.session_state.messages.append({
-                        "role": "assistant",
-                        "content": f"음성에서 '{audio_text}'를 감지했으며, 감정은 '{audio_emotion}'입니다.",
-                        "timestamp": current_time
-                    })
-                else:
-                    st.session_state.messages.append({
-                        "role": "user",
-                        "content": "[음성 파일 업로드됨]",
-                        "emotion": audio_emotion,
-                        "timestamp": current_time
-                    })
-                    st.session_state.messages.append({
-                        "role": "assistant",
-                        "content": f"음성에서 감지된 감정은 '{audio_emotion}'입니다.",
-                        "timestamp": current_time
-                    })
-                
-                # 통계 업데이트
-                update_conversation_stats(audio_emotion)
-            
-            else:
-                st.warning("음성 감정을 분석할 수 없었습니다.")
-        
-    except Exception as e:
-        st.error(f"음성 처리 중 오류: {e}")
-        print(f"[CRITICAL ERROR] 음성 처리 중 예외 발생: {e}")
-    
-    finally:
-        # 임시 파일 삭제
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
-            print("[DEBUG] 임시 파일 삭제 완료.")
+        temp_audio_path = "temp_audio.wav"
 
+        # 1. 텍스트 변환 (Google API + Whisper 병행)
+        with st.spinner("텍스트 변환 중..."):
+            audio_text = process_audio_file(uploaded_audio.read(), temp_audio_path)
+            if not audio_text:
+                st.warning("음성에서 텍스트를 감지할 수 없습니다.")
+                return
+
+        # 2. 감정 분석
+        with st.spinner("감정 분석 중..."):
+            audio_emotion = predict_emotion(temp_audio_path)
+            if not audio_emotion:
+                st.warning("음성 감정을 분석할 수 없습니다.")
+                return
+
+        # 3. 결과 업데이트
+        current_time = datetime.now().strftime('%p %I:%M')
+        st.session_state.messages.append({
+            "role": "user",
+            "content": f"[음성 파일] 텍스트: {audio_text}",
+            "emotion": audio_emotion,
+            "timestamp": current_time
+        })
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": f"음성에서 '{audio_text}'를 감지했으며, 감정은 '{audio_emotion}'입니다.",
+            "timestamp": current_time
+        })
+
+        # 통계 업데이트
+        update_conversation_stats(audio_emotion)
+
+    except Exception as e:
+        st.error(f"오류 발생: {e}")
 
 def update_conversation_stats(emotion: str):
     """Update conversation statistics based on the detected emotion."""
