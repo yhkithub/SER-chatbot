@@ -52,13 +52,25 @@ def process_audio_input(audio_bytes):
     """
     Google API와 Whisper 모델을 병행하여 오디오를 텍스트로 변환
     """
+    temp_audio_path = "temp_audio.wav"
     try:
         # 파일을 임시 저장
-        temp_audio_path = "temp_audio.wav"
         with open(temp_audio_path, "wb") as f:
             f.write(audio_bytes)
 
-        print("[DEBUG] 임시 파일 저장 완료. Google API로 변환 시도 중...")
+        # 파일 존재 및 크기 확인
+        if not os.path.exists(temp_audio_path):
+            print("[ERROR] 임시 파일 생성 실패")
+            return None
+
+        file_size = os.path.getsize(temp_audio_path)
+        print(f"[DEBUG] 임시 파일 크기: {file_size} 바이트")
+
+        if file_size == 0:
+            print("[ERROR] 업로드된 음성 파일이 비어있습니다.")
+            return None
+
+        print("[DEBUG] Google API로 변환 시도 중...")
         # 1. Google Speech Recognition으로 텍스트 변환 시도
         google_text = convert_audio_with_google(temp_audio_path)
 
@@ -69,9 +81,17 @@ def process_audio_input(audio_bytes):
         print("[DEBUG] Google 변환 실패. Whisper로 대체 시도 중...")
         # 2. Google API가 실패하면 Whisper로 폴백
         whisper_text = process_audio_with_whisper(temp_audio_path)
+        
         if whisper_text:
             print(f"[DEBUG] Whisper 변환 성공: {whisper_text}")
-        return whisper_text
+            return whisper_text
+        
+        print("[ERROR] 음성 변환에 실패했습니다.")
+        return None
+
+    except Exception as e:
+        print(f"[CRITICAL ERROR] 음성 처리 중 예외 발생: {e}")
+        return None
     finally:
         # 임시 파일 삭제
         if os.path.exists(temp_audio_path):
