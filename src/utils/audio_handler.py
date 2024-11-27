@@ -5,8 +5,12 @@ from transformers import pipeline
 from pydub import AudioSegment
 import speech_recognition as sr
 
-# Whisper 모델 로드
-whisper_model = pipeline(task="automatic-speech-recognition", model="openai/whisper-small")
+# Lazy Initialization for Whisper
+def get_whisper_model():
+    global whisper_model
+    if 'whisper_model' not in globals():
+        whisper_model = pipeline(task="automatic-speech-recognition", model="openai/whisper-small")
+    return whisper_model
 
 def convert_with_google(audio_path):
     """
@@ -31,6 +35,7 @@ def convert_with_whisper(audio_path):
     Whisper 모델을 사용하여 오디오를 텍스트로 변환
     """
     try:
+        whisper_model = get_whisper_model()
         waveform, sample_rate = torchaudio.load(audio_path)
         print(f"[DEBUG] Waveform Shape: {waveform.shape}, Sample Rate: {sample_rate}")
 
