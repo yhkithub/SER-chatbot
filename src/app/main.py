@@ -9,12 +9,25 @@ from src.core.services.chatbot_service import ChatbotService
 from src.app.config import OpenAIConfig
 from src.utils.audio_handler import process_audio_input
 from src.components.message_display import apply_chat_styles, display_message, get_emotion_color
-import warnings
 
-# 특정 경고 무시
-warnings.filterwarnings("ignore", category=SyntaxWarning)
-warnings.filterwarnings("ignore", category=RuntimeWarning)
-warnings.filterwarnings("ignore", category=UserWarning)
+
+import warnings
+import logging
+import os
+import torchaudio
+
+# PyTorch 및 Torchaudio 경고 무시
+warnings.filterwarnings("ignore", category=UserWarning, module="torch")
+warnings.filterwarnings("ignore", message="Torchaudio's I/O functions now support par-call backend dispatch")
+logging.getLogger("torch").setLevel(logging.ERROR)
+
+# Streamlit 로그 최소화
+os.environ["STREAMLIT_LOG_LEVEL"] = "error"
+logging.getLogger("streamlit").setLevel(logging.ERROR)
+
+# Torchaudio I/O backend 명시적 설정
+waveform, sample_rate = torchaudio.load("audio.wav", backend="sox_io")
+
 
 # 음성 감정 인식 모델 설정
 model_name = "forwarder1121/ast-finetuned-model"
