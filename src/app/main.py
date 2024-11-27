@@ -90,12 +90,9 @@ def handle_audio_upload(uploaded_audio):
             f.write(uploaded_audio.getbuffer())
 
         with st.spinner('음성 분석 중...'):
-            # 텍스트 변환
-            audio_text, detected_language = process_audio_input(
-                uploaded_audio.read(),
-                language_options=('ko-KR', 'en-US')
-            )
-            
+            # 텍스트 변환 (Whisper 기반)
+            audio_text, detected_language = process_audio_input(uploaded_audio.read(), language_options=('ko', 'en'))
+
             # 감정 분석
             audio_emotion = predict_audio_emotion(temp_file_path)
 
@@ -103,7 +100,6 @@ def handle_audio_upload(uploaded_audio):
             current_time = datetime.now().strftime('%p %I:%M')
 
             if audio_emotion:
-                # `current_emotion` 업데이트
                 st.session_state.current_emotion = audio_emotion
 
                 # 텍스트와 감정 표시
@@ -139,7 +135,6 @@ def handle_audio_upload(uploaded_audio):
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
 
-        # 새로고침으로 즉시 반영
         st.rerun()
 
     except Exception as e:
@@ -147,8 +142,6 @@ def handle_audio_upload(uploaded_audio):
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
         return False
-
-
 
 def main():
     st.set_page_config(
