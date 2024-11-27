@@ -98,22 +98,26 @@ def handle_audio_upload(uploaded_audio):
     """
     try:
         temp_audio_path = "temp_audio.wav"
+        with open(temp_audio_path, "wb") as f:
+            f.write(uploaded_audio.getbuffer())
 
-        # 1. 텍스트 변환 (Google API + Whisper 병행)
+        print(f"[DEBUG] 임시 파일 저장 완료: {temp_audio_path}")
+
+        # 텍스트 변환
         with st.spinner("텍스트 변환 중..."):
             audio_text = process_audio_file(uploaded_audio.read(), temp_audio_path)
             if not audio_text:
                 st.warning("음성에서 텍스트를 감지할 수 없습니다.")
                 return
 
-        # 2. 감정 분석
+        # 감정 분석
         with st.spinner("감정 분석 중..."):
-            audio_emotion = predict_emotion(temp_audio_path)
+            audio_emotion = predict_audio_emotion(temp_audio_path)
             if not audio_emotion:
                 st.warning("음성 감정을 분석할 수 없습니다.")
                 return
 
-        # 3. 결과 업데이트
+        # 결과 업데이트
         current_time = datetime.now().strftime('%p %I:%M')
         st.session_state.messages.append({
             "role": "user",
@@ -127,11 +131,13 @@ def handle_audio_upload(uploaded_audio):
             "timestamp": current_time
         })
 
-        # 통계 업데이트
         update_conversation_stats(audio_emotion)
+        print("[DEBUG] 메시지 업데이트 완료")
 
     except Exception as e:
         st.error(f"오류 발생: {e}")
+        print(f"[ERROR] handle_audio_upload에서 오류 발생: {e}")
+
 
 def update_conversation_stats(emotion: str):
     """Update conversation statistics based on the detected emotion."""
