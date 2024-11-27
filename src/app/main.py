@@ -83,64 +83,37 @@ def update_conversation_stats(emotion: str):
         st.session_state.conversation_stats['negative'] += 1
 
 def handle_audio_upload(uploaded_audio):
-    """Handle audio file upload and emotion prediction."""
+    """Handle audio file upload and process with Whisper."""
     try:
         temp_file_path = "temp_audio.wav"
+
+        # 파일 저장
         with open(temp_file_path, "wb") as f:
             f.write(uploaded_audio.getbuffer())
 
-        with st.spinner('음성 분석 중...'):
-            # 텍스트 변환 (Whisper 기반)
-            audio_text, detected_language = process_audio_input(uploaded_audio.read(), language_options=('ko', 'en'))
+        # Whisper 모델로 텍스트 변환
+        with st.spinner("음성을 텍스트로 변환 중..."):
+            audio_text = process_audio_with_whisper(temp_file_path)
 
-            # 감정 분석
-            audio_emotion = predict_audio_emotion(temp_file_path)
+        # 결과 출력
+        current_time = datetime.now().strftime('%p %I:%M')
 
-            # 메시지 추가
-            current_time = datetime.now().strftime('%p %I:%M')
-
-            if audio_emotion:
-                st.session_state.current_emotion = audio_emotion
-
-                # 텍스트와 감정 표시
-                if audio_text:
-                    st.session_state.messages.append({
-                        "role": "user",
-                        "content": f"[음성 파일이 업로드됨] {audio_text}",
-                        "emotion": audio_emotion,
-                        "timestamp": current_time
-                    })
-                    st.session_state.messages.append({
-                        "role": "assistant",
-                        "content": f"음성에서 감지된 텍스트는 '{audio_text}'이며, 감정은 '{audio_emotion}'입니다.",
-                        "timestamp": current_time
-                    })
-                else:
-                    st.session_state.messages.append({
-                        "role": "user",
-                        "content": "[음성 파일이 업로드됨]",
-                        "emotion": audio_emotion,
-                        "timestamp": current_time
-                    })
-                    st.session_state.messages.append({
-                        "role": "assistant",
-                        "content": f"음성에서 감지된 감정은 '{audio_emotion}'입니다.",
-                        "timestamp": current_time
-                    })
-
-                # 통계 업데이트
-                update_conversation_stats(audio_emotion)
+        if audio_text:
+            st.success(f"텍스트 변환 성공: {audio_text}")
+            st.session_state.messages.append({
+                "role": "user",
+                "content": f"[음성 파일이 업로드됨] {audio_text}",
+                "timestamp": current_time
+            })
+        else:
+            st.error("텍스트 변환 실패. 오디오 파일을 확인해주세요.")
 
         # 파일 삭제
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
 
-        st.rerun()
-
     except Exception as e:
-        st.error(f"음성 처리 중 오류가 발생했습니다: {str(e)}")
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
+        st.error(f"오디오 처리 중 오류가 발생했습니다: {str(e)}")
         return False
 
 
