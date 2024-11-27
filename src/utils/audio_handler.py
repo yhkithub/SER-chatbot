@@ -1,99 +1,77 @@
-import speech_recognition as sr
-from transformers import pipeline
 import torchaudio
-import io
+import torch
 import os
+from transformers import pipeline
+from pydub import AudioSegment
+import speech_recognition as sr
 
 # Whisper 모델 로드
 whisper_model = pipeline(task="automatic-speech-recognition", model="openai/whisper-small")
 
-def convert_audio_with_google(audio_path):
+def convert_with_google(audio_path):
     """
-    Google Speech Recognition API를 사용해 오디오를 텍스트로 변환
+    Google Speech Recognition API를 사용하여 오디오를 텍스트로 변환
     """
     try:
         recognizer = sr.Recognizer()
         with sr.AudioFile(audio_path) as source:
             audio_data = recognizer.record(source)
-        # Google Speech Recognition API로 변환
         text = recognizer.recognize_google(audio_data)
         print(f"[DEBUG] Google Speech Recognition 결과: {text}")
         return text
     except sr.UnknownValueError:
-        print("[DEBUG] Google Speech Recognition이 음성을 이해하지 못했습니다.")
+        print("[DEBUG] Google Speech Recognition이 텍스트를 감지하지 못했습니다.")
         return None
     except Exception as e:
-        print(f"[ERROR] Google API 처리 중 오류 발생: {e}")
+        print(f"[ERROR] Google Speech Recognition 오류: {e}")
         return None
 
-
-def process_audio_with_whisper(audio_path):
+def convert_with_whisper(audio_path):
     """
-    Whisper 모델을 사용해 오디오를 텍스트로 변환
+    Whisper 모델을 사용하여 오디오를 텍스트로 변환
     """
     try:
         waveform, sample_rate = torchaudio.load(audio_path)
         print(f"[DEBUG] Waveform Shape: {waveform.shape}, Sample Rate: {sample_rate}")
 
+        # 16kHz로 리샘플링
         if sample_rate != 16000:
             resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
             waveform = resampler(waveform)
 
         result = whisper_model(waveform.squeeze().numpy())
         text = result.get("text", "").strip()
-        print(f"[DEBUG] Whisper 모델 결과: {text}")
+        print(f"[DEBUG] Whisper 결과: {text}")
         return text
     except Exception as e:
         print(f"[ERROR] Whisper 처리 중 오류 발생: {e}")
         return None
 
-
-def process_audio_input(audio_bytes):
+def process_audio_file(audio_bytes, temp_audio_path="temp_audio.wav"):
     """
-    Google API와 Whisper 모델을 병행하여 오디오를 텍스트로 변환
+    Google API와 Whisper를 병행하여 오디오를 텍스트로 변환
     """
-    temp_audio_path = "temp_audio.wav"
     try:
-        # 파일을 임시 저장
+        # 임시 파일 저장
         with open(temp_audio_path, "wb") as f:
             f.write(audio_bytes)
 
-        # 파일 존재 및 크기 확인
-        if not os.path.exists(temp_audio_path):
-            print("[ERROR] 임시 파일 생성 실패")
-            return None
+        print(f"[DEBUG] 임시 파일 저장 완료: {temp_audio_path}")
 
-        file_size = os.path.getsize(temp_audio_path)
-        print(f"[DEBUG] 임시 파일 크기: {file_size} 바이트")
-
-        if file_size == 0:
-            print("[ERROR] 업로드된 음성 파일이 비어있습니다.")
-            return None
-
-        print("[DEBUG] Google API로 변환 시도 중...")
-        # 1. Google Speech Recognition으로 텍스트 변환 시도
-        google_text = convert_audio_with_google(temp_audio_path)
-
+        # Google API 시도
+        google_text = convert_with_google(temp_audio_path)
         if google_text:
-            print(f"[DEBUG] Google 변환 성공: {google_text}")
-            return google_text
+            return google_text  # Google API 성공
 
-        print("[DEBUG] Google 변환 실패. Whisper로 대체 시도 중...")
-        # 2. Google API가 실패하면 Whisper로 폴백
-        whisper_text = process_audio_with_whisper(temp_audio_path)
-        
-        if whisper_text:
-            print(f"[DEBUG] Whisper 변환 성공: {whisper_text}")
-            return whisper_text
-        
-        print("[ERROR] 음성 변환에 실패했습니다.")
-        return None
+        # Google 실패 시 Whisper 시도
+        print("[DEBUG] Google 실패, Whisper로 대체 시도...")
+        whisper_text = convert_with_whisper(temp_audio_path)
+        return whisper_text
 
     except Exception as e:
-        print(f"[CRITICAL ERROR] 음성 처리 중 예외 발생: {e}")
+        print(f"[ERROR] Audio Processing Error: {e}")
         return None
     finally:
-        # 임시 파일 삭제
         if os.path.exists(temp_audio_path):
             os.remove(temp_audio_path)
-            print("[DEBUG] 임시 파일 삭제 완료.")
+            print(f"[DEBUG] 임시 파일 삭제 완료: {temp_audio_path}")
