@@ -58,16 +58,22 @@ def process_audio_input(audio_bytes):
         with open(temp_audio_path, "wb") as f:
             f.write(audio_bytes)
 
+        print("[DEBUG] 임시 파일 저장 완료. Google API로 변환 시도 중...")
         # 1. Google Speech Recognition으로 텍스트 변환 시도
         google_text = convert_audio_with_google(temp_audio_path)
 
+        if google_text:
+            print(f"[DEBUG] Google 변환 성공: {google_text}")
+            return google_text
+
+        print("[DEBUG] Google 변환 실패. Whisper로 대체 시도 중...")
         # 2. Google API가 실패하면 Whisper로 폴백
-        if not google_text:
-            print("[DEBUG] Google 변환 실패. Whisper로 대체합니다.")
-            whisper_text = process_audio_with_whisper(temp_audio_path)
-            return whisper_text
-        return google_text
+        whisper_text = process_audio_with_whisper(temp_audio_path)
+        if whisper_text:
+            print(f"[DEBUG] Whisper 변환 성공: {whisper_text}")
+        return whisper_text
     finally:
         # 임시 파일 삭제
         if os.path.exists(temp_audio_path):
             os.remove(temp_audio_path)
+            print("[DEBUG] 임시 파일 삭제 완료.")
