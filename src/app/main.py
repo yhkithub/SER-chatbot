@@ -64,21 +64,23 @@ def predict_audio_emotion(audio_path):
         waveform, sample_rate = torchaudio.load(audio_path)
         print(f"[DEBUG] 오디오 로드 완료: Waveform Shape: {waveform.shape}, Sample Rate: {sample_rate}")
 
-        # 전처리
+        # 오디오 전처리
         processed_waveform = process_audio(waveform, target_sample_rate=16000)
         if processed_waveform is None:
-            print("[ERROR] 오디오 전처리에 실패했습니다.")
+            print("[ERROR] 오디오 전처리 실패")
             return None
-
         print(f"[DEBUG] 전처리된 Waveform Shape: {processed_waveform.shape}")
 
         # 모델 입력 생성
         inputs = processor(processed_waveform.squeeze(), sampling_rate=16000, return_tensors="pt")
-        print("[DEBUG] 모델 입력 생성 완료")
+        print(f"[DEBUG] 모델 입력 생성 완료: {inputs.keys()}")
 
-        # 감정 분석 실행
+        # 모델 예측
         with torch.no_grad():
             outputs = model(**inputs)
+        print(f"[DEBUG] 모델 출력: {outputs.logits}")
+
+        # 예측된 감정 인덱스
         predicted_class_idx = outputs.logits.argmax(-1).item()
         print(f"[DEBUG] 감정 분석 결과 Index: {predicted_class_idx}")
 
@@ -90,6 +92,7 @@ def predict_audio_emotion(audio_path):
     except Exception as e:
         print(f"[ERROR] 감정 분석 중 오류 발생: {e}")
         return None
+
 
 
 def handle_audio_upload(uploaded_audio):
