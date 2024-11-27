@@ -93,8 +93,8 @@ def handle_audio_upload(uploaded_audio):
             f.write(uploaded_audio.getbuffer())
 
         with st.spinner("음성 분석 중..."):
-            # 1. 텍스트 변환 (Whisper 사용)
-            audio_text = process_audio_with_whisper(temp_file_path)
+            # 1. 텍스트 변환 (Google + Whisper 병행)
+            audio_text = process_audio_input(uploaded_audio.read())
 
             # 2. 감정 분석
             audio_emotion = predict_audio_emotion(temp_file_path)
