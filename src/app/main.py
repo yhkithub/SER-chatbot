@@ -9,7 +9,6 @@ from src.core.services.chatbot_service import ChatbotService
 from src.app.config import OpenAIConfig
 from src.utils.audio_handler import process_audio_file
 from src.components.message_display import apply_chat_styles, display_message, get_emotion_color
-from transformers import AutoModelForAudioClassification, AutoProcessor
 
 # 음성 감정 인식 모델 설정
 model_name = "forwarder1121/ast-finetuned-model"
@@ -29,31 +28,25 @@ EMOTION_MAPPING = {
 def process_audio(waveform, target_sample_rate=16000, target_length=16000):
     """Process audio to correct format."""
     try:
-        print(f"[DEBUG] 원본 Waveform Shape: {waveform.shape}")
-
-        # 다채널 오디오 처리
-        if waveform.shape[0] > 1:
+        if waveform.shape[0] > 1:  # 다채널 오디오인 경우 평균 처리
             waveform = torch.mean(waveform, dim=0, keepdim=True)
-            print(f"[DEBUG] 다채널 평균 처리 후 Waveform Shape: {waveform.shape}")
 
-        # 리샘플링
-        if target_sample_rate != 16000:
-            resampler = T.Resample(orig_freq=target_sample_rate, new_freq=16000)
-            waveform = resampler(waveform)
-            print(f"[DEBUG] 리샘플링 후 Waveform Shape: {waveform.shape}")
+        if waveform.shape[1] > 0:
+            current_sample_rate = target_sample_rate
+            if current_sample_rate != target_sample_rate:
+                resampler = T.Resample(orig_freq=current_sample_rate, new_freq=target_sample_rate)
+                waveform = resampler(waveform)
 
-        # 길이 조정
         if waveform.shape[1] < target_length:
             padding_length = target_length - waveform.shape[1]
             waveform = torch.nn.functional.pad(waveform, (0, padding_length))
-            print(f"[DEBUG] 패딩 후 Waveform Shape: {waveform.shape}")
-        elif waveform.shape[1] > target_length:
-            waveform = waveform[:, :target_length]
-            print(f"[DEBUG] 잘라낸 Waveform Shape: {waveform.shape}")
+        else:
+            start = (waveform.shape[1] - target_length) // 2
+            waveform = waveform[:, start:start + target_length]
 
         return waveform
     except Exception as e:
-        print(f"[ERROR] 오디오 전처리 중 오류 발생: {e}")
+        st.error(f"Error in audio processing: {str(e)}")
         return None
 
 
