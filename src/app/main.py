@@ -94,13 +94,13 @@ def predict_audio_emotion(audio_path):
         return None
 
 
-
 def handle_audio_upload(uploaded_audio):
     """
     음성 파일 업로드 핸들러
     """
+    temp_audio_path = "temp_audio.wav"
     try:
-        temp_audio_path = "temp_audio.wav"
+        # 임시 파일 저장
         with open(temp_audio_path, "wb") as f:
             f.write(uploaded_audio.getbuffer())
 
@@ -140,6 +140,13 @@ def handle_audio_upload(uploaded_audio):
     except Exception as e:
         st.error(f"오류 발생: {e}")
         print(f"[ERROR] handle_audio_upload에서 오류 발생: {e}")
+
+    finally:
+        # 모든 작업이 끝난 후 파일 삭제
+        if os.path.exists(temp_audio_path):
+            os.remove(temp_audio_path)
+            print(f"[DEBUG] 임시 파일 삭제 완료: {temp_audio_path}")
+
 
 
 def update_conversation_stats(emotion: str):
