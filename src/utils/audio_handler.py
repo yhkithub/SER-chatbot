@@ -2,6 +2,7 @@ import speech_recognition as sr
 from transformers import pipeline
 import torchaudio
 import io
+import os
 
 # Whisper 모델 로드
 whisper_model = pipeline(task="automatic-speech-recognition", model="openai/whisper-small")
