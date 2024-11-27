@@ -84,18 +84,20 @@ def update_conversation_stats(emotion: str):
         st.session_state.conversation_stats['negative'] += 1
 
 def handle_audio_upload(uploaded_audio):
-    """
-    Handle audio file upload: Text conversion and emotion prediction.
-    """
     try:
         temp_file_path = "temp_audio.wav"
         with open(temp_file_path, "wb") as f:
             f.write(uploaded_audio.getbuffer())
 
+        # 파일 정보 출력
+        print(f"[DEBUG] 파일 이름: {uploaded_audio.name}")
+        print(f"[DEBUG] 파일 크기: {uploaded_audio.size} 바이트")
+
         with st.spinner("음성 분석 중..."):
-            # 1. 텍스트 변환
-            print("[DEBUG] 음성 텍스트 변환 시작...")
             audio_text = process_audio_input(uploaded_audio.read())
+
+            if not audio_text:
+                st.warning("음성을 텍스트로 변환하지 못했습니다. 다른 음성 파일을 시도해보세요.")
 
             if audio_text:
                 print(f"[DEBUG] 변환된 텍스트: {audio_text}")
@@ -155,12 +157,10 @@ def handle_audio_upload(uploaded_audio):
         print("[DEBUG] 음성 업로드 처리 완료. 새로고침 시작...")
         st.rerun()
 
+            # 나머지 코드는 동일
     except Exception as e:
-        st.error(f"음성 처리 중 오류가 발생했습니다: {str(e)}")
-        print(f"[ERROR] 음성 업로드 처리 중 오류 발생: {e}")
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
-        return False
+        st.error(f"오디오 처리 중 오류: {e}")
+        print(f"[ERROR] 오디오 업로드 처리 중 오류: {e}")
 
 def main():
     st.set_page_config(
