@@ -76,7 +76,5 @@ def process_audio_file(audio_bytes, temp_audio_path="temp_audio.wav"):
     except Exception as e:
         print(f"[ERROR] Audio Processing Error: {e}")
         return None
-    finally:
-        if os.path.exists(temp_audio_path):
-            os.remove(temp_audio_path)
-            print(f"[DEBUG] 임시 파일 삭제 완료: {temp_audio_path}")
+    # 삭제는 여기서 하지 않음
+
