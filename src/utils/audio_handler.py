@@ -38,18 +38,25 @@ def convert_audio_to_text(wav_audio_data, language='ko-KR'):
         return None
 
 
-def process_audio_input(wav_audio_data, language_options=('ko-KR', 'en-US')):
+def process_audio_input(wav_audio_data, language_options=('en-US', 'ko-KR')):
     """음성 입력을 처리하고 결과를 반환하는 함수"""
     if wav_audio_data is not None:
-        # 음성 변환
+        # 자동 언어 감지 시도
+        try:
+            audio_text = convert_audio_to_text(wav_audio_data)  # 언어 설정 없음
+            if audio_text:
+                return audio_text, "auto-detected"
+        except Exception as e:
+            print(f"[DEBUG] Auto language detection failed: {e}")
+
+        # 지정 언어 목록 순회
         for language in language_options:
             try:
-                # 음성 인식
                 audio_text = convert_audio_to_text(wav_audio_data, language=language)
                 if audio_text:
                     return audio_text, language
             except Exception:
                 continue  # 다음 언어로 시도
 
-        # 텍스트 변환 실패
+        # 변환 실패
         return None, None
