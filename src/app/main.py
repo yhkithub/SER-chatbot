@@ -89,9 +89,9 @@ def handle_audio_upload(uploaded_audio):
         with open(temp_file_path, "wb") as f:
             f.write(uploaded_audio.getbuffer())
 
-        with st.spinner('음성 분석 중...'):
-            # 텍스트 변환 (Whisper 기반)
-            audio_text, detected_language = process_audio_input(uploaded_audio.read(), language_options=('ko', 'en'))
+        with st.spinner("음성 분석 중..."):
+            # 텍스트 변환
+            audio_text = process_audio_input(uploaded_audio.read())
 
             # 감정 분석
             audio_emotion = predict_audio_emotion(temp_file_path)
@@ -106,7 +106,7 @@ def handle_audio_upload(uploaded_audio):
                 if audio_text:
                     st.session_state.messages.append({
                         "role": "user",
-                        "content": f"[음성 파일이 업로드됨] {audio_text}",
+                        "content": f"[음성 파일이 업로드됨] 텍스트: {audio_text}",
                         "emotion": audio_emotion,
                         "timestamp": current_time
                     })
