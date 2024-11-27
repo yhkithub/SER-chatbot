@@ -8,7 +8,6 @@ import torchaudio.transforms as T
 from src.core.services.chatbot_service import ChatbotService
 from src.app.config import OpenAIConfig
 from src.utils.audio_handler import process_audio_input
-from src.utils.audio_handler import process_audio_with_whisper
 from src.components.message_display import apply_chat_styles, display_message, get_emotion_color
 
 
