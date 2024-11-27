@@ -9,6 +9,7 @@ from src.core.services.chatbot_service import ChatbotService
 from src.app.config import OpenAIConfig
 from src.utils.audio_handler import process_audio_input
 from src.components.message_display import apply_chat_styles, display_message, get_emotion_color
+from src.utils.audio_handler import process_audio_with_whisper
 
 
 # 음성 감정 인식 모델 설정
@@ -83,27 +84,28 @@ def update_conversation_stats(emotion: str):
         st.session_state.conversation_stats['negative'] += 1
 
 def handle_audio_upload(uploaded_audio):
-    """Handle audio file upload and emotion prediction."""
+    """
+    Handle audio file upload: Text conversion and emotion prediction.
+    """
     try:
         temp_file_path = "temp_audio.wav"
         with open(temp_file_path, "wb") as f:
             f.write(uploaded_audio.getbuffer())
 
         with st.spinner("음성 분석 중..."):
-            # 텍스트 변환
-            audio_text = process_audio_input(uploaded_audio.read())
+            # 1. 텍스트 변환 (Whisper 사용)
+            audio_text = process_audio_with_whisper(temp_file_path)
 
-            # 감정 분석
+            # 2. 감정 분석
             audio_emotion = predict_audio_emotion(temp_file_path)
 
-            # 메시지 추가
+            # 3. 결과 메시지 업데이트
             current_time = datetime.now().strftime('%p %I:%M')
-
             if audio_emotion:
                 st.session_state.current_emotion = audio_emotion
 
-                # 텍스트와 감정 표시
                 if audio_text:
+                    # 텍스트와 감정 표시
                     st.session_state.messages.append({
                         "role": "user",
                         "content": f"[음성 파일이 업로드됨] 텍스트: {audio_text}",
@@ -116,6 +118,7 @@ def handle_audio_upload(uploaded_audio):
                         "timestamp": current_time
                     })
                 else:
+                    # 감정만 표시
                     st.session_state.messages.append({
                         "role": "user",
                         "content": "[음성 파일이 업로드됨]",
@@ -131,7 +134,7 @@ def handle_audio_upload(uploaded_audio):
                 # 통계 업데이트
                 update_conversation_stats(audio_emotion)
 
-        # 파일 삭제
+        # 임시 파일 삭제
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
 
