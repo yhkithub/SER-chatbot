@@ -1,16 +1,9 @@
-from datetime import datetime
-import streamlit as st
+import os
 import torch
 import torchaudio
-import os
+import streamlit as st
+from datetime import datetime
 from transformers import AutoModelForAudioClassification, AutoProcessor
-import torchaudio.transforms as T
-from src.core.services.chatbot_service import ChatbotService
-from src.app.config import OpenAIConfig
-from src.utils.audio_handler import process_audio_input
-from src.components.message_display import apply_chat_styles, display_message, get_emotion_color
-from src.utils.audio_handler import process_audio_with_whisper
-
 
 # 음성 감정 인식 모델 설정
 model_name = "forwarder1121/ast-finetuned-model"
@@ -27,138 +20,82 @@ EMOTION_MAPPING = {
     5: "Sad"
 }
 
-def process_audio(waveform, target_sample_rate=16000, target_length=16000):
-    """Process audio to correct format."""
+def process_audio_emotion(audio_path):
+    """통합된 오디오 처리 및 감정 분석 함수"""
     try:
-        if waveform.shape[0] > 1:  # 다채널 오디오인 경우 평균 처리
-            waveform = torch.mean(waveform, dim=0, keepdim=True)
-
-        if waveform.shape[1] > 0:
-            current_sample_rate = target_sample_rate
-            if current_sample_rate != target_sample_rate:
-                resampler = T.Resample(orig_freq=current_sample_rate, new_freq=target_sample_rate)
-                waveform = resampler(waveform)
-
-        if waveform.shape[1] < target_length:
-            padding_length = target_length - waveform.shape[1]
-            waveform = torch.nn.functional.pad(waveform, (0, padding_length))
-        else:
-            start = (waveform.shape[1] - target_length) // 2
-            waveform = waveform[:, start:start + target_length]
-
-        return waveform
-    except Exception as e:
-        st.error(f"Error in audio processing: {str(e)}")
-        return None
-
-def predict_audio_emotion(audio_path):
-    """Predict emotion from audio file."""
-    try:
-        # 절대 경로 사용
-        absolute_path = os.path.abspath(audio_path)
-        print(f"[DEBUG] 절대 경로: {absolute_path}")
+        # 오디오 로드
+        waveform, sample_rate = torchaudio.load(audio_path)
         
-        # 파일 존재 확인
-        if not os.path.exists(absolute_path):
-            print(f"[ERROR] 파일이 존재하지 않음: {absolute_path}")
-            return None
-
-        # 파일 권한 및 읽기 가능 여부 확인
-        try:
-            with open(absolute_path, 'rb') as f:
-                file_size = os.path.getsize(absolute_path)
-                print(f"[DEBUG] 파일 크기: {file_size} 바이트")
-        except PermissionError:
-            print(f"[ERROR] 파일 읽기 권한 없음: {absolute_path}")
-            return None
-        except Exception as e:
-            print(f"[ERROR] 파일 열기 실패: {e}")
-            return None
-
-        waveform, sample_rate = torchaudio.load(absolute_path)
-        processed_waveform = process_audio(waveform, target_sample_rate=16000)
-
-        if processed_waveform is None:
-            return None
-
-        inputs = processor(processed_waveform.squeeze(), sampling_rate=16000, return_tensors="pt")
-
+        # 모노 채널로 변환
+        if waveform.shape[0] > 1:
+            waveform = waveform.mean(dim=0, keepdim=True)
+        
+        # 16kHz로 리샘플링
+        if sample_rate != 16000:
+            resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
+            waveform = resampler(waveform)
+        
+        # 입력 길이 조정
+        target_length = 16000  # 1초 길이
+        if waveform.shape[1] > target_length:
+            waveform = waveform[:, :target_length]
+        elif waveform.shape[1] < target_length:
+            padding = torch.zeros(1, target_length - waveform.shape[1])
+            waveform = torch.cat([waveform, padding], dim=1)
+        
+        # 감정 분석
+        inputs = processor(waveform.squeeze(), sampling_rate=16000, return_tensors="pt")
+        
         with torch.no_grad():
             outputs = model(**inputs)
         
         predicted_class_idx = outputs.logits.argmax(-1).item()
-
-        if predicted_class_idx in EMOTION_MAPPING:
-            return EMOTION_MAPPING[predicted_class_idx]
-        return None
-
+        emotion = EMOTION_MAPPING.get(predicted_class_idx, "Unknown")
+        
+        return emotion
+    
     except Exception as e:
-        print(f"[ERROR] 감정 예측 중 전체 오류: {e}")
+        st.error(f"음성 감정 분석 중 오류 발생: {e}")
         return None
-
-def update_conversation_stats(emotion: str):
-    """Update conversation statistics based on the detected emotion."""
-    st.session_state.conversation_stats['total'] += 1
-    if emotion in ['Happy', 'Neutral']:
-        st.session_state.conversation_stats['positive'] += 1
-    elif emotion in ['Anger', 'Disgust', 'Fear', 'Sad']:
-        st.session_state.conversation_stats['negative'] += 1
 
 def handle_audio_upload(uploaded_audio):
-    """
-    Handle audio file upload: Text conversion and emotion prediction.
-    """
+    """음성 파일 업로드 처리"""
     temp_file_path = "temp_audio.wav"
+    
     try:
-        # 파일 생성 시 전체 권한 부여
+        # 임시 파일로 저장
         with open(temp_file_path, "wb") as f:
             f.write(uploaded_audio.getbuffer())
         
-        # 파일 권한 변경 (모든 사용자에게 읽기/쓰기 권한)
-        os.chmod(temp_file_path, 0o666)
-
+        # 감정 분석
         with st.spinner("음성 분석 중..."):
-            print("[DEBUG] 음성 텍스트 변환 시작...")
+            # 텍스트 변환 (기존 audio_handler 함수 사용)
             audio_text = process_audio_input(uploaded_audio.read())
-
-            if audio_text:
-                print(f"[DEBUG] 변환된 텍스트: {audio_text}")
-            else:
-                print("[DEBUG] 텍스트 변환 실패.")
-
-            # 2. 감정 분석
-            print("[DEBUG] 감정 분석 시작...")
-            audio_emotion = predict_audio_emotion(temp_file_path)
-
+            
+            # 감정 분석
+            audio_emotion = process_audio_emotion(temp_file_path)
+            
             if audio_emotion:
-                print(f"[DEBUG] 감지된 감정: {audio_emotion}")
-            else:
-                print("[DEBUG] 감정 분석 실패.")
-
-            # 3. 결과 메시지 업데이트
-            current_time = datetime.now().strftime('%p %I:%M')
-            if audio_emotion:
+                # 메시지 업데이트
+                current_time = datetime.now().strftime('%p %I:%M')
                 st.session_state.current_emotion = audio_emotion
-
+                
                 if audio_text:
-                    # 텍스트와 감정 표시
                     st.session_state.messages.append({
                         "role": "user",
-                        "content": f"[음성 파일이 업로드됨] 텍스트: {audio_text}",
+                        "content": f"[음성 파일] 텍스트: {audio_text}",
                         "emotion": audio_emotion,
                         "timestamp": current_time
                     })
                     st.session_state.messages.append({
                         "role": "assistant",
-                        "content": f"음성에서 감지된 텍스트는 '{audio_text}'이며, 감정은 '{audio_emotion}'입니다.",
+                        "content": f"음성에서 '{audio_text}'를 감지했으며, 감정은 '{audio_emotion}'입니다.",
                         "timestamp": current_time
                     })
-                    print("[DEBUG] 텍스트와 감정 결과 메시지 추가 완료.")
                 else:
-                    # 감정만 표시
                     st.session_state.messages.append({
                         "role": "user",
-                        "content": "[음성 파일이 업로드됨]",
+                        "content": "[음성 파일 업로드됨]",
                         "emotion": audio_emotion,
                         "timestamp": current_time
                     })
@@ -167,30 +104,30 @@ def handle_audio_upload(uploaded_audio):
                         "content": f"음성에서 감지된 감정은 '{audio_emotion}'입니다.",
                         "timestamp": current_time
                     })
-                    print("[DEBUG] 감정 결과 메시지 추가 완료.")
-
+                
                 # 통계 업데이트
                 update_conversation_stats(audio_emotion)
-
+            
+            else:
+                st.warning("음성 감정을 분석할 수 없었습니다.")
+        
+    except Exception as e:
+        st.error(f"음성 처리 중 오류: {e}")
+    
+    finally:
         # 임시 파일 삭제
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
-
-        print("[DEBUG] 음성 업로드 처리 완료. 새로고침 시작...")
+        
         st.rerun()
 
-            # 나머지 코드는 동일
-    except Exception as e:
-        st.error(f"음성 처리 중 오류가 발생했습니다: {str(e)}")
-        print(f"[ERROR] 음성 업로드 처리 중 오류 발생: {e}")
-    finally:
-        # 임시 파일 강제 삭제
-        try:
-            if os.path.exists(temp_file_path):
-                os.remove(temp_file_path)
-                print("[DEBUG] 임시 파일 삭제 완료.")
-        except Exception as e:
-            print(f"[ERROR] 임시 파일 삭제 중 오류: {e}")
+def update_conversation_stats(emotion: str):
+    """Update conversation statistics based on the detected emotion."""
+    st.session_state.conversation_stats['total'] += 1
+    if emotion in ['Happy', 'Neutral']:
+        st.session_state.conversation_stats['positive'] += 1
+    elif emotion in ['Anger', 'Disgust', 'Fear', 'Sad']:
+        st.session_state.conversation_stats['negative'] += 1
 
 def main():
     st.set_page_config(
