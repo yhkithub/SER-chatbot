@@ -54,7 +54,28 @@ def process_audio(waveform, target_sample_rate=16000, target_length=16000):
 def predict_audio_emotion(audio_path):
     """Predict emotion from audio file."""
     try:
-        waveform, sample_rate = torchaudio.load(audio_path)
+        # 절대 경로 사용
+        absolute_path = os.path.abspath(audio_path)
+        print(f"[DEBUG] 절대 경로: {absolute_path}")
+        
+        # 파일 존재 확인
+        if not os.path.exists(absolute_path):
+            print(f"[ERROR] 파일이 존재하지 않음: {absolute_path}")
+            return None
+
+        # 파일 권한 및 읽기 가능 여부 확인
+        try:
+            with open(absolute_path, 'rb') as f:
+                file_size = os.path.getsize(absolute_path)
+                print(f"[DEBUG] 파일 크기: {file_size} 바이트")
+        except PermissionError:
+            print(f"[ERROR] 파일 읽기 권한 없음: {absolute_path}")
+            return None
+        except Exception as e:
+            print(f"[ERROR] 파일 열기 실패: {e}")
+            return None
+
+        waveform, sample_rate = torchaudio.load(absolute_path)
         processed_waveform = process_audio(waveform, target_sample_rate=16000)
 
         if processed_waveform is None:
@@ -72,7 +93,7 @@ def predict_audio_emotion(audio_path):
         return None
 
     except Exception as e:
-        st.error(f"Error in emotion prediction: {str(e)}")
+        print(f"[ERROR] 감정 예측 중 전체 오류: {e}")
         return None
 
 def update_conversation_stats(emotion: str):
@@ -84,20 +105,21 @@ def update_conversation_stats(emotion: str):
         st.session_state.conversation_stats['negative'] += 1
 
 def handle_audio_upload(uploaded_audio):
+    """
+    Handle audio file upload: Text conversion and emotion prediction.
+    """
+    temp_file_path = "temp_audio.wav"
     try:
-        temp_file_path = "temp_audio.wav"
+        # 파일 생성 시 전체 권한 부여
         with open(temp_file_path, "wb") as f:
             f.write(uploaded_audio.getbuffer())
-
-        # 파일 정보 출력
-        print(f"[DEBUG] 파일 이름: {uploaded_audio.name}")
-        print(f"[DEBUG] 파일 크기: {uploaded_audio.size} 바이트")
+        
+        # 파일 권한 변경 (모든 사용자에게 읽기/쓰기 권한)
+        os.chmod(temp_file_path, 0o666)
 
         with st.spinner("음성 분석 중..."):
+            print("[DEBUG] 음성 텍스트 변환 시작...")
             audio_text = process_audio_input(uploaded_audio.read())
-
-            if not audio_text:
-                st.warning("음성을 텍스트로 변환하지 못했습니다. 다른 음성 파일을 시도해보세요.")
 
             if audio_text:
                 print(f"[DEBUG] 변환된 텍스트: {audio_text}")
@@ -159,8 +181,16 @@ def handle_audio_upload(uploaded_audio):
 
             # 나머지 코드는 동일
     except Exception as e:
-        st.error(f"오디오 처리 중 오류: {e}")
-        print(f"[ERROR] 오디오 업로드 처리 중 오류: {e}")
+        st.error(f"음성 처리 중 오류가 발생했습니다: {str(e)}")
+        print(f"[ERROR] 음성 업로드 처리 중 오류 발생: {e}")
+    finally:
+        # 임시 파일 강제 삭제
+        try:
+            if os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+                print("[DEBUG] 임시 파일 삭제 완료.")
+        except Exception as e:
+            print(f"[ERROR] 임시 파일 삭제 중 오류: {e}")
 
 def main():
     st.set_page_config(
