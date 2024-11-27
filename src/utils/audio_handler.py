@@ -3,14 +3,27 @@ from pydub import AudioSegment
 import io
 import streamlit as st
 
+import matplotlib.pyplot as plt
+import torchaudio
+import numpy as np
+
 def convert_audio_to_text(wav_audio_data, language='ko-KR'):
     """음성 데이터를 텍스트로 변환하는 함수"""
     try:
         # WAV 데이터를 AudioSegment로 변환
         audio = AudioSegment.from_file(io.BytesIO(wav_audio_data), format="wav")
 
-        # 파일 정보 디버깅 (콘솔 출력)
+        # 오디오 정보 출력
         print(f"Audio Info: Channels={audio.channels}, Frame Rate={audio.frame_rate}, Duration={len(audio)}ms")
+        
+        # 오디오 시각화 (디버깅)
+        waveform, sample_rate = torchaudio.load(io.BytesIO(wav_audio_data))
+        plt.figure(figsize=(10, 4))
+        plt.plot(waveform.t().numpy())
+        plt.title("Waveform Visualization")
+        plt.xlabel("Time")
+        plt.ylabel("Amplitude")
+        plt.show()
 
         # 오디오를 16kHz, 모노로 표준화
         audio = audio.set_frame_rate(16000).set_channels(1)
@@ -32,31 +45,28 @@ def convert_audio_to_text(wav_audio_data, language='ko-KR'):
         text = recognizer.recognize_google(audio_data, language=language)
         return text
     except sr.UnknownValueError:
+        print("Speech Recognition could not understand the audio.")
         return None
     except Exception as e:
-        print(f"음성 인식 중 오류 발생: {e}")  # 콘솔에 오류 출력
+        print(f"음성 인식 중 오류 발생: {e}")
         return None
 
 
-def process_audio_input(wav_audio_data, language_options=('en-US', 'ko-KR')):
+def process_audio_input(wav_audio_data, language_options=('ko-KR', 'en-US')):
     """음성 입력을 처리하고 결과를 반환하는 함수"""
     if wav_audio_data is not None:
-        # 자동 언어 감지 시도
-        try:
-            audio_text = convert_audio_to_text(wav_audio_data)  # 언어 설정 없음
-            if audio_text:
-                return audio_text, "auto-detected"
-        except Exception as e:
-            print(f"[DEBUG] Auto language detection failed: {e}")
-
-        # 지정 언어 목록 순회
         for language in language_options:
             try:
+                # 언어별로 음성 텍스트 변환 시도
+                print(f"Trying language: {language}")
                 audio_text = convert_audio_to_text(wav_audio_data, language=language)
                 if audio_text:
+                    print(f"Recognized Text ({language}): {audio_text}")
                     return audio_text, language
-            except Exception:
-                continue  # 다음 언어로 시도
+            except Exception as e:
+                print(f"Error during audio processing for language {language}: {e}")
+                continue
 
-        # 변환 실패
+        # 텍스트 변환 실패 시
+        print("Failed to convert audio to text.")
         return None, None
