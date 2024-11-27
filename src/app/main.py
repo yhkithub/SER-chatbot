@@ -93,11 +93,23 @@ def handle_audio_upload(uploaded_audio):
             f.write(uploaded_audio.getbuffer())
 
         with st.spinner("음성 분석 중..."):
-            # 1. 텍스트 변환 (Google + Whisper 병행)
+            # 1. 텍스트 변환
+            print("[DEBUG] 음성 텍스트 변환 시작...")
             audio_text = process_audio_input(uploaded_audio.read())
 
+            if audio_text:
+                print(f"[DEBUG] 변환된 텍스트: {audio_text}")
+            else:
+                print("[DEBUG] 텍스트 변환 실패.")
+
             # 2. 감정 분석
+            print("[DEBUG] 감정 분석 시작...")
             audio_emotion = predict_audio_emotion(temp_file_path)
+
+            if audio_emotion:
+                print(f"[DEBUG] 감지된 감정: {audio_emotion}")
+            else:
+                print("[DEBUG] 감정 분석 실패.")
 
             # 3. 결과 메시지 업데이트
             current_time = datetime.now().strftime('%p %I:%M')
@@ -117,6 +129,7 @@ def handle_audio_upload(uploaded_audio):
                         "content": f"음성에서 감지된 텍스트는 '{audio_text}'이며, 감정은 '{audio_emotion}'입니다.",
                         "timestamp": current_time
                     })
+                    print("[DEBUG] 텍스트와 감정 결과 메시지 추가 완료.")
                 else:
                     # 감정만 표시
                     st.session_state.messages.append({
@@ -130,6 +143,7 @@ def handle_audio_upload(uploaded_audio):
                         "content": f"음성에서 감지된 감정은 '{audio_emotion}'입니다.",
                         "timestamp": current_time
                     })
+                    print("[DEBUG] 감정 결과 메시지 추가 완료.")
 
                 # 통계 업데이트
                 update_conversation_stats(audio_emotion)
@@ -138,15 +152,15 @@ def handle_audio_upload(uploaded_audio):
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
 
+        print("[DEBUG] 음성 업로드 처리 완료. 새로고침 시작...")
         st.rerun()
 
     except Exception as e:
         st.error(f"음성 처리 중 오류가 발생했습니다: {str(e)}")
+        print(f"[ERROR] 음성 업로드 처리 중 오류 발생: {e}")
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
         return False
-
-
 
 def main():
     st.set_page_config(
