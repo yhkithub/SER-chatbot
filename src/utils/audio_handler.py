@@ -1,31 +1,30 @@
 from transformers import pipeline
 import torchaudio
-import io
+import os
 
 # Whisper 모델 로드
 whisper_model = pipeline(task="automatic-speech-recognition", model="openai/whisper-small")
 
-def process_audio_with_whisper(audio_file_path):
+def convert_audio_to_text(audio_data, language='ko'):
     """
-    Whisper 모델을 사용해 오디오를 텍스트로 변환
+    Whisper 모델을 사용해 음성을 텍스트로 변환
     """
     try:
-        # 오디오 로드
-        waveform, sample_rate = torchaudio.load(audio_file_path)
-        print(f"[DEBUG] Waveform Shape: {waveform.shape}, Sample Rate: {sample_rate}")
+        # 오디오 데이터를 메모리에서 읽어서 Torchaudio로 변환
+        waveform, sample_rate = torchaudio.load(io.BytesIO(audio_data))
+        print(f"[DEBUG] Audio Info: Shape={waveform.shape}, Sample Rate={sample_rate}")
 
-        # 16kHz로 샘플링 레이트 변경
+        # 16kHz로 변환
         if sample_rate != 16000:
             resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
             waveform = resampler(waveform)
 
-        # Whisper 모델 입력
-        print(f"[DEBUG] Passing data to Whisper model: {waveform.shape}")
-        result = whisper_model(waveform.squeeze().numpy())
-        print(f"[DEBUG] Whisper Result: {result}")
+        # Whisper에 입력 가능한 형식으로 변환
+        audio_data = waveform.squeeze().numpy()
+        result = whisper_model(audio_data, language=language)
         return result['text']
     except Exception as e:
-        print(f"[ERROR] Whisper 처리 중 오류 발생: {e}")
+        print(f"[ERROR] Whisper STT Error: {e}")
         return None
 
 
