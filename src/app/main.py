@@ -74,9 +74,21 @@ def handle_audio_upload(uploaded_audio):
         with open(temp_file_path, "wb") as f:
             f.write(uploaded_audio.getbuffer())
         
+        # 파일 존재 및 크기 확인
+        if not os.path.exists(temp_file_path):
+            st.error("[ERROR] 임시 파일이 생성되지 않았습니다.")
+            return
+        
+        file_size = os.path.getsize(temp_file_path)
+        if file_size == 0:
+            st.error("[ERROR] 업로드된 음성 파일이 비어 있습니다.")
+            return
+        
+        print(f"[DEBUG] 임시 파일 생성 완료: {temp_file_path}, 크기: {file_size} 바이트")
+        
         # 감정 분석
         with st.spinner("음성 분석 중..."):
-            # 텍스트 변환 (기존 audio_handler 함수 사용)
+            # 텍스트 변환
             audio_text = process_audio_input(uploaded_audio.read())
             
             # 감정 분석
@@ -120,13 +132,14 @@ def handle_audio_upload(uploaded_audio):
         
     except Exception as e:
         st.error(f"음성 처리 중 오류: {e}")
+        print(f"[CRITICAL ERROR] 음성 처리 중 예외 발생: {e}")
     
     finally:
         # 임시 파일 삭제
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
-        
-        st.rerun()
+            print("[DEBUG] 임시 파일 삭제 완료.")
+
 
 def update_conversation_stats(emotion: str):
     """Update conversation statistics based on the detected emotion."""
