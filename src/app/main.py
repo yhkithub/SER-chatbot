@@ -29,51 +29,68 @@ EMOTION_MAPPING = {
 def process_audio(waveform, target_sample_rate=16000, target_length=16000):
     """Process audio to correct format."""
     try:
-        if waveform.shape[0] > 1:  # 다채널 오디오인 경우 평균 처리
+        print(f"[DEBUG] 원본 Waveform Shape: {waveform.shape}")
+
+        # 다채널 오디오 처리
+        if waveform.shape[0] > 1:
             waveform = torch.mean(waveform, dim=0, keepdim=True)
+            print(f"[DEBUG] 다채널 평균 처리 후 Waveform Shape: {waveform.shape}")
 
-        if waveform.shape[1] > 0:
-            current_sample_rate = target_sample_rate
-            if current_sample_rate != target_sample_rate:
-                resampler = T.Resample(orig_freq=current_sample_rate, new_freq=target_sample_rate)
-                waveform = resampler(waveform)
+        # 리샘플링
+        if target_sample_rate != 16000:
+            resampler = T.Resample(orig_freq=target_sample_rate, new_freq=16000)
+            waveform = resampler(waveform)
+            print(f"[DEBUG] 리샘플링 후 Waveform Shape: {waveform.shape}")
 
+        # 길이 조정
         if waveform.shape[1] < target_length:
             padding_length = target_length - waveform.shape[1]
             waveform = torch.nn.functional.pad(waveform, (0, padding_length))
-        else:
-            start = (waveform.shape[1] - target_length) // 2
-            waveform = waveform[:, start:start + target_length]
+            print(f"[DEBUG] 패딩 후 Waveform Shape: {waveform.shape}")
+        elif waveform.shape[1] > target_length:
+            waveform = waveform[:, :target_length]
+            print(f"[DEBUG] 잘라낸 Waveform Shape: {waveform.shape}")
 
         return waveform
     except Exception as e:
-        st.error(f"Error in audio processing: {str(e)}")
+        print(f"[ERROR] 오디오 전처리 중 오류 발생: {e}")
         return None
 
-def predict_emotion(audio_path):
-    """
-    감정 분석을 수행
-    """
+
+def predict_audio_emotion(audio_path):
+    """Predict emotion from audio file."""
     try:
+        # 오디오 로드
         waveform, sample_rate = torchaudio.load(audio_path)
+        print(f"[DEBUG] 오디오 로드 완료: Waveform Shape: {waveform.shape}, Sample Rate: {sample_rate}")
 
-        # 16kHz로 리샘플링
-        if sample_rate != 16000:
-            resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
-            waveform = resampler(waveform)
+        # 전처리
+        processed_waveform = process_audio(waveform, target_sample_rate=16000)
+        if processed_waveform is None:
+            print("[ERROR] 오디오 전처리에 실패했습니다.")
+            return None
 
-        # 감정 분석 모델 입력
-        inputs = processor(waveform.squeeze(), sampling_rate=16000, return_tensors="pt")
+        print(f"[DEBUG] 전처리된 Waveform Shape: {processed_waveform.shape}")
+
+        # 모델 입력 생성
+        inputs = processor(processed_waveform.squeeze(), sampling_rate=16000, return_tensors="pt")
+        print("[DEBUG] 모델 입력 생성 완료")
+
+        # 감정 분석 실행
         with torch.no_grad():
             outputs = model(**inputs)
-
         predicted_class_idx = outputs.logits.argmax(-1).item()
+        print(f"[DEBUG] 감정 분석 결과 Index: {predicted_class_idx}")
+
+        # 감정 매핑
         emotion = EMOTION_MAPPING.get(predicted_class_idx, "Unknown")
-        print(f"[DEBUG] 감정 분석 결과: {emotion}")
+        print(f"[DEBUG] 감정 분석 결과 Emotion: {emotion}")
         return emotion
+
     except Exception as e:
         print(f"[ERROR] 감정 분석 중 오류 발생: {e}")
         return None
+
 
 def handle_audio_upload(uploaded_audio):
     """
