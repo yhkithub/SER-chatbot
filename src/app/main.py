@@ -32,18 +32,20 @@ def get_emotion_from_gpt(prompt: str) -> str:
     predefined_emotions = ["Anger", "Disgust", "Fear", "Happy", "Neutral", "Sad"]
     emotion_prompt = (
         f"The user said: \"{prompt}\".\n"
-        f"Classify this input into one of these emotions: {', '.join(predefined_emotions)}.\n"
-        f"Respond only with the emotion, without any explanation or additional text."
+        f"Classify the user's input into one of the following emotions: {', '.join(predefined_emotions)}.\n"
+        f"Respond only with the emotion (e.g., Happy, Neutral, Sad). Do not include explanations or any other text."
     )
     
     # OpenAI API 호출
     response = st.session_state.chatbot_service.get_response(emotion_prompt)
+    print(f"[DEBUG] GPT Response: {response.strip()}")  # 디버깅 로그
     standardized_emotion = response.strip()
 
-    # 사전 정의된 감정으로 표준화
+    # 예상 범위 밖의 응답 처리
     if standardized_emotion not in predefined_emotions:
-        standardized_emotion = "Neutral"  # 기본값
+        standardized_emotion = "Neutral"
     return standardized_emotion
+
 
 
 
