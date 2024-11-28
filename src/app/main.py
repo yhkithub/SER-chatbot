@@ -25,6 +25,13 @@ EMOTION_MAPPING = {
     5: "Sad"
 }
 
+# 페르소나 리스트
+PERSONAS = {
+    "김소연 선생님": "",
+    "박준호 팀장님": "",
+    "장난꾸러기 민준이": "",
+}
+
 def get_emotion_from_gpt(prompt: str) -> str:
     """
     GPT를 통해 텍스트 감정을 추론하고 표준화된 값 반환.
@@ -284,6 +291,10 @@ def main():
         3. 챗봇이 감정을 분석하고 공감적인 대화를 제공합니다.
         4. 필요한 경우 적절한 조언이나 위로를 받을 수 있습니다.
         """)
+
+        st.markdown("### 페르소나 선택")
+        selected_persona = st.selectbox("페르소나를 선택하세요:", list(PERSONAS.keys()))
+        st.session_state.selected_persona = selected_persona  # 세션 상태에 저장
 
         # 현재 감정 상태 표시
         if 'current_emotion' in st.session_state:
