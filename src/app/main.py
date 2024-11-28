@@ -113,9 +113,6 @@ def predict_audio_emotion(audio_path):
 
 
 def handle_audio_upload(uploaded_audio):
-    """
-    음성 파일 업로드 핸들러
-    """
     temp_audio_path = "temp_audio.wav"
     try:
         with open(temp_audio_path, "wb") as f:
@@ -137,12 +134,15 @@ def handle_audio_upload(uploaded_audio):
                 st.warning("음성 감정을 분석할 수 없습니다.")
                 return
 
+        # 감정 상태 업데이트
+        st.session_state.current_emotion = audio_emotion
+        update_conversation_stats(audio_emotion)
+
         # 선택된 페르소나 가져오기
         persona_name = st.session_state.get("selected_persona", "김소연 선생님")
 
         # GPT 응답 생성
         with st.spinner("GPT 응답 생성 중..."):
-            persona_name = st.session_state.get("selected_persona", "김소연 선생님")
             gpt_prompt = (
                 f"The user uploaded an audio file. Here is the transcribed text: '{audio_text}'.\n"
                 f"The detected emotion is '{audio_emotion}'.\n"
@@ -150,7 +150,6 @@ def handle_audio_upload(uploaded_audio):
             )
             chatbot = st.session_state.chatbot_service
             gpt_response = chatbot.get_response(gpt_prompt, persona_name)
-
 
         # 메시지 업데이트
         current_time = datetime.now().strftime('%p %I:%M')
@@ -166,7 +165,6 @@ def handle_audio_upload(uploaded_audio):
             "timestamp": current_time
         })
 
-        update_conversation_stats(audio_emotion)
         print("[DEBUG] 메시지 업데이트 완료")
 
     except Exception as e:
@@ -332,14 +330,17 @@ def main():
         if prompt.strip():
             chatbot = st.session_state.chatbot_service
             persona_name = st.session_state.get("selected_persona", "김소연 선생님")
-
+    
             # 감정 분석
             user_emotion = get_emotion_from_gpt(prompt)
-            st.session_state.current_emotion = user_emotion
-
+            st.session_state.current_emotion = user_emotion  # 현재 감정 상태 업데이트
+    
+            # 대화 통계 업데이트
+            update_conversation_stats(user_emotion)
+    
             # GPT 응답 생성
             response = chatbot.get_response(prompt, persona_name)
-
+    
             # 메시지 저장
             current_time = datetime.now().strftime('%p %I:%M')
             st.session_state.messages.append({
@@ -353,9 +354,10 @@ def main():
                 "content": response,
                 "timestamp": current_time
             })
-
+    
             # 화면 갱신
             st.rerun()
+
 
 if __name__ == "__main__":
     main()
