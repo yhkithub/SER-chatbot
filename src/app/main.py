@@ -29,32 +29,22 @@ def get_emotion_from_gpt(prompt: str) -> str:
     """
     GPT를 통해 텍스트 감정을 추론하고 표준화된 값 반환.
     """
-    predefined_emotions = {
-        "Happy": "Happy",
-        "Neutral": "Neutral",
-        "Sad": "Sad",
-        "Anger": "Anger",
-        "Fear": "Fear",
-        "Disgust": "Disgust",
-        "중립": "Neutral",
-        "분노": "Anger",
-        "행복": "Happy",
-        "슬픔": "Sad",
-        "두려움": "Fear",
-        "혐오": "Disgust"
-    }
-    
-    # GPT로부터 감정 예측
+    predefined_emotions = ["Anger", "Disgust", "Fear", "Happy", "Neutral", "Sad"]
     emotion_prompt = (
         f"The user said: \"{prompt}\".\n"
-        f"Classify this input into one of these emotions: {', '.join(predefined_emotions.keys())}.\n"
-        f"Respond only with the emotion."
+        f"Classify this input into one of these emotions: {', '.join(predefined_emotions)}.\n"
+        f"Respond only with the emotion, without any explanation or additional text."
     )
-    response = st.session_state.chatbot_service.get_response(emotion_prompt)
     
-    # 감정을 표준화된 형태로 변환
-    standardized_emotion = predefined_emotions.get(response.strip(), "Neutral")  # 기본값은 Neutral
+    # OpenAI API 호출
+    response = st.session_state.chatbot_service.get_response(emotion_prompt)
+    standardized_emotion = response.strip()
+
+    # 사전 정의된 감정으로 표준화
+    if standardized_emotion not in predefined_emotions:
+        standardized_emotion = "Neutral"  # 기본값
     return standardized_emotion
+
 
 
 def process_audio(waveform, target_sample_rate=16000, target_length=16000):
