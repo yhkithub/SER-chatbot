@@ -1,5 +1,13 @@
 import streamlit as st
 
+PERSONA_ICONS = {
+    "김소연 선생님": "https://example.com/icons/teacher.png",
+    "박준호 팀장님": "https://example.com/icons/manager.png",
+    "민준이": "https://example.com/icons/child.png",
+    "이동환": "https://example.com/icons/friend.png",
+    "정서윤": "https://example.com/icons/student.png",
+}
+
 # def get_emotion_color(emotion: str) -> str:
 #     """Return background color based on emotion"""
 #     emotion_colors = {
@@ -30,8 +38,8 @@ def get_emotion_color(emotion: str) -> str:
     }
     return emotion_colors.get(emotion, '#FFD700')  # Default to gold for neutral
 
-def display_message(message: dict):
-    """Display chat message with emotion-based styling"""
+def display_message(message: dict, persona: str = "default"):
+    """Display chat message with persona-based icon styling"""
     role = message.get('role', '')
     content = message.get('content', '')
     timestamp = message.get('timestamp', '')
@@ -39,8 +47,15 @@ def display_message(message: dict):
 
     # Assistant message (left side)
     if role == "assistant":
+        icon_url = PERSONA_ICONS.get(persona, "https://example.com/icons/default.png")  # Default icon
         st.markdown(f"""
-            <div style="display: flex; justify-content: flex-start; margin: 16px 0;">
+            <div style="display: flex; align-items: center; margin: 16px 0;">
+                <img src="{icon_url}" style="
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    margin-right: 10px;
+                ">
                 <div style="
                     background-color: #F0F0F0;
                     color: black;
