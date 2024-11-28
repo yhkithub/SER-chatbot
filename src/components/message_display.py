@@ -31,39 +31,14 @@ def get_emotion_color(emotion: str) -> str:
     return emotion_colors.get(emotion, '#FFD700')  # Default to gold for neutral
 
 def display_message(message: dict):
-    """Display chat message with emotion-based styling"""
+    """감정 기반 메시지 스타일"""
     role = message.get('role', '')
     content = message.get('content', '')
     timestamp = message.get('timestamp', '')
     emotion = message.get('emotion', '')
-    
-    # Assistant message (left side)
-    if role == "assistant":
-        st.markdown(f"""
-            <div style="display: flex; justify-content: flex-start; margin: 16px 0;">
-                <div style="
-                    background-color: #F0F0F0;
-                    color: black;
-                    padding: 12px 18px;
-                    border-radius: 18px;
-                    border-top-left-radius: 4px;
-                    max-width: 80%;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    position: relative;
-                ">
-                    <div style="font-size: 1rem; line-height: 1.4;">{content}</div>
-                    <div style="
-                        font-size: 0.75rem;
-                        color: #666;
-                        margin-top: 6px;
-                        text-align: right;
-                    ">{timestamp}</div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    # User message (right side)
-    else:
+
+    # 사용자 메시지 (오른쪽 정렬)
+    if role == "user":
         background = get_emotion_color(emotion)
         st.markdown(f"""
             <div style="display: flex; justify-content: flex-end; margin: 16px 0;">
@@ -75,28 +50,32 @@ def display_message(message: dict):
                     border-top-right-radius: 4px;
                     max-width: 80%;
                     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    position: relative;
                 ">
                     <div style="font-size: 1rem; line-height: 1.4;">{content}</div>
-                    <div style="
-                        display: flex;
-                        justify-content: flex-end;
-                        align-items: center;
-                        gap: 8px;
-                        margin-top: 6px;
-                    ">
-                        <span style="
-                            font-size: 0.75rem;
-                            background-color: rgba(0,0,0,0.1);
-                            padding: 2px 8px;
-                            border-radius: 12px;
-                            font-weight: 500;
-                        ">{emotion}</span>
-                        <span style="font-size: 0.75rem; color: #333;">{timestamp}</span>
-                    </div>
+                    <div style="margin-top: 6px; font-size: 0.75rem; color: #333;">{emotion} · {timestamp}</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
+    
+    # 챗봇 메시지 (왼쪽 정렬)
+    else:
+        st.markdown(f"""
+            <div style="display: flex; justify-content: flex-start; margin: 16px 0;">
+                <div style="
+                    background-color: #F0F0F0;
+                    color: black;
+                    padding: 12px 18px;
+                    border-radius: 18px;
+                    border-top-left-radius: 4px;
+                    max-width: 80%;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                ">
+                    <div style="font-size: 1rem; line-height: 1.4;">{content}</div>
+                    <div style="margin-top: 6px; font-size: 0.75rem; color: #666;">{timestamp}</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
 
 # Add custom CSS for chat container
 def apply_chat_styles():
