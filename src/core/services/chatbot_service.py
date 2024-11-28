@@ -26,27 +26,21 @@ class ChatbotService:
         results = self.emotion_classifier(text)
         return {score['label']: score['score'] for score in results[0]}
 
-    def get_response(self, user_input: str, persona_name: str) -> str:
-        """
-        사용자 입력과 선택된 페르소나를 기반으로 GPT 응답 생성.
-        """
-        # 페르소나 프롬프트 가져오기
-        persona_prompt = PERSONAS.get(persona_name, "기본 페르소나 프롬프트")
-        
-        # 감정 분석
-        emotions = self.analyze_emotion(user_input)
-        dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
+def get_response(self, user_input: str, persona_name: str) -> str:
+    """
+    사용자 입력과 페르소나를 기반으로 GPT 응답 생성.
+    """
+    persona_prompt = PERSONAS.get(persona_name, "기본 페르소나 프롬프트")
+    prompt = f"""
+    {persona_prompt}
 
-        # 프롬프트 생성
-        prompt = f"""
-        {persona_prompt}
+    사용자 메시지: {user_input}
 
-        사용자 메시지: {user_input}
-        사용자의 감정: {dominant_emotion}
+    [페르소나]의 답변:
+    """
 
-        [페르소나]의 답변:
-        """
-
-        # GPT 호출
-        response = self.llm.invoke(prompt)
-        return response.content
+    # GPT 호출
+    response = self.llm.invoke(prompt)
+    cleaned_response = response.content.strip()  # 응답 양 끝 공백 제거
+    print(f"[DEBUG] GPT Response: {cleaned_response}")
+    return cleaned_response
