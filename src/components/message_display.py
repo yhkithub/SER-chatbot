@@ -8,21 +8,6 @@ PERSONA_ICONS = {
     "정서윤": "https://example.com/icons/student.png",
 }
 
-# def get_emotion_color(emotion: str) -> str:
-#     """Return background color based on emotion"""
-#     emotion_colors = {
-#         # Positive emotions
-#         'Happy': 'linear-gradient(135deg, #90EE90, #98FB98)',  # Light green gradient
-#         'Neutral': 'linear-gradient(135deg, #FEE500, #FFE44D)',  # Yellow gradient
-        
-#         # Negative emotions
-#         'Sad': 'linear-gradient(135deg, #ADD8E6, #87CEEB)',  # Light blue gradient
-#         'Anger': 'linear-gradient(135deg, #FFB6C1, #FFA07A)',  # Light red gradient
-#         'Fear': 'linear-gradient(135deg, #DDA0DD, #D8BFD8)',  # Light purple gradient
-#         'Disgust': 'linear-gradient(135deg, #F0E68C, #EEE8AA)'  # Light khaki gradient
-#     }
-#     return emotion_colors.get(emotion, 'linear-gradient(135deg, #FEE500, #FFE44D)')
-
 def get_emotion_color(emotion: str) -> str:
     """Return solid background color based on emotion"""
     emotion_colors = {
