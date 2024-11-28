@@ -142,6 +142,7 @@ def handle_audio_upload(uploaded_audio):
 
         # GPT 응답 생성
         with st.spinner("GPT 응답 생성 중..."):
+            persona_name = st.session_state.get("selected_persona", "김소연 선생님")
             gpt_prompt = (
                 f"The user uploaded an audio file. Here is the transcribed text: '{audio_text}'.\n"
                 f"The detected emotion is '{audio_emotion}'.\n"
@@ -149,6 +150,7 @@ def handle_audio_upload(uploaded_audio):
             )
             chatbot = st.session_state.chatbot_service
             gpt_response = chatbot.get_response(gpt_prompt, persona_name)
+
 
         # 메시지 업데이트
         current_time = datetime.now().strftime('%p %I:%M')
@@ -267,6 +269,7 @@ def main():
             'positive': 0,
             'negative': 0
         }
+        st.session_state.selected_persona = "김소연 선생님"  # 기본값
 
     # 사이드바
     with st.sidebar:
@@ -331,13 +334,14 @@ def main():
         if prompt.strip():
             chatbot = st.session_state.chatbot_service
             persona_name = st.session_state.get("selected_persona", "김소연 선생님")
-    
+        
             # 감정 분석
             user_emotion = get_emotion_from_gpt(prompt)
-    
+            st.session_state.current_emotion = user_emotion  # 현재 감정 상태 업데이트
+        
             # GPT 응답 생성
             response = chatbot.get_response(prompt, persona_name)
-    
+        
             # 메시지 저장
             current_time = datetime.now().strftime('%p %I:%M')
             st.session_state.messages.append({
@@ -351,9 +355,10 @@ def main():
                 "content": response,
                 "timestamp": current_time
             })
-    
+        
             # 화면 갱신
             st.rerun()
+
 
 
     # if prompt := st.chat_input("메시지를 입력하세요..."):
