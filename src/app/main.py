@@ -33,8 +33,14 @@ def get_emotion_from_gpt(prompt: str) -> str:
     emotion_prompt = (
         f"The user said: \"{prompt}\".\n"
         f"Classify the user's input into one of these emotions: {', '.join(predefined_emotions)}.\n"
+        f"Here are some examples:\n"
+        f"1. 'I am so happy today!' -> Happy\n"
+        f"2. 'I hate this!' -> Anger\n"
+        f"3. 'I'm feeling scared.' -> Fear\n"
+        f"4. 'Ew, that's disgusting.' -> Disgust\n"
+        f"5. 'I'm just fine, nothing special.' -> Neutral\n"
+        f"6. 'I feel so sad right now.' -> Sad\n"
         f"Respond ONLY with one of the following words: Anger, Disgust, Fear, Happy, Neutral, Sad.\n"
-        f"Do not include any explanation or additional text."
     )
 
     # OpenAI API 호출
@@ -48,7 +54,6 @@ def get_emotion_from_gpt(prompt: str) -> str:
         print(f"[DEBUG] Unexpected emotion: {standardized_emotion}")  # 디버깅
         standardized_emotion = "Neutral"  # 기본값
     return standardized_emotion
-
 
 
 def process_audio(waveform, target_sample_rate=16000, target_length=16000):
