@@ -35,27 +35,19 @@ def get_emotion_from_gpt(prompt: str) -> str:
     emotion_prompt = (
         f"The user said: \"{prompt}\".\n"
         f"Classify the user's input into one of these emotions: {', '.join(predefined_emotions)}.\n"
-        f"Here are some examples:\n"
-        f"1. 'I am so happy today!' -> Happy\n"
-        f"2. 'I hate this!' -> Anger\n"
-        f"3. 'I'm feeling scared.' -> Fear\n"
-        f"4. 'Ew, that's disgusting.' -> Disgust\n"
-        f"5. 'I'm just fine, nothing special.' -> Neutral\n"
-        f"6. 'I feel so sad right now.' -> Sad\n"
-        f"Respond ONLY with one of the following words: Anger, Disgust, Fear, Happy, Neutral, Sad.\n"
+        f"Respond ONLY with the emotion name (e.g., Happy, Neutral).\n"
     )
 
     # OpenAI API 호출
-    response = st.session_state.chatbot_service.get_response(emotion_prompt)
-    print(f"[DEBUG] GPT Response: {response.strip()}")  # 디버깅용
+    response = st.session_state.chatbot_service.llm.invoke(emotion_prompt)
+    detected_emotion = response.content.strip()  # 응답에서 감정 추출
+    print(f"[DEBUG] Detected Emotion: {detected_emotion}")
 
-    standardized_emotion = response.strip()
+    if detected_emotion not in predefined_emotions:
+        print(f"[DEBUG] Unexpected emotion: {detected_emotion}")
+        detected_emotion = "Neutral"  # 기본값 설정
 
-    # 예상 범위를 벗어난 응답 처리
-    if standardized_emotion not in predefined_emotions:
-        print(f"[DEBUG] Unexpected emotion: {standardized_emotion}")  # 디버깅
-        standardized_emotion = "Neutral"  # 기본값
-    return standardized_emotion
+    return detected_emotion
 
 
 def process_audio(waveform, target_sample_rate=16000, target_length=16000):
@@ -126,7 +118,6 @@ def handle_audio_upload(uploaded_audio):
     """
     temp_audio_path = "temp_audio.wav"
     try:
-        # 임시 파일 저장
         with open(temp_audio_path, "wb") as f:
             f.write(uploaded_audio.getbuffer())
 
@@ -146,17 +137,20 @@ def handle_audio_upload(uploaded_audio):
                 st.warning("음성 감정을 분석할 수 없습니다.")
                 return
 
-        # GPT를 통해 응답 생성
+        # 선택된 페르소나 가져오기
+        persona_name = st.session_state.get("selected_persona", "김소연 선생님")
+
+        # GPT 응답 생성
         with st.spinner("GPT 응답 생성 중..."):
             gpt_prompt = (
                 f"The user uploaded an audio file. Here is the transcribed text: '{audio_text}'.\n"
                 f"The detected emotion is '{audio_emotion}'.\n"
-                f"Based on this text and emotion, respond to the user in an empathetic and conversational way."
+                f"Respond to the user in the selected persona: {persona_name}."
             )
             chatbot = st.session_state.chatbot_service
-            gpt_response = chatbot.get_response(gpt_prompt)
+            gpt_response = chatbot.get_response(gpt_prompt, persona_name)
 
-        # 결과 업데이트
+        # 메시지 업데이트
         current_time = datetime.now().strftime('%p %I:%M')
         st.session_state.messages.append({
             "role": "user",
@@ -178,7 +172,6 @@ def handle_audio_upload(uploaded_audio):
         print(f"[ERROR] handle_audio_upload에서 오류 발생: {e}")
 
     finally:
-        # 임시 파일 삭제
         if os.path.exists(temp_audio_path):
             os.remove(temp_audio_path)
             print(f"[DEBUG] 임시 파일 삭제 완료: {temp_audio_path}")
@@ -334,15 +327,13 @@ def main():
     st.title("채팅")
 
     # 메시지 표시
-    for message in st.session_state.get('messages', []):
-        with st.chat_message(message["role"]):
-            display_message(message)
-
-    # 텍스트 입력 처리
     if prompt := st.chat_input("메시지를 입력하세요..."):
         if prompt.strip():
             chatbot = st.session_state.chatbot_service
             persona_name = st.session_state.get("selected_persona", "김소연 선생님")
+    
+            # 감정 분석
+            user_emotion = get_emotion_from_gpt(prompt)
     
             # GPT 응답 생성
             response = chatbot.get_response(prompt, persona_name)
@@ -352,6 +343,7 @@ def main():
             st.session_state.messages.append({
                 "role": "user",
                 "content": prompt,
+                "emotion": user_emotion,
                 "timestamp": current_time
             })
             st.session_state.messages.append({
