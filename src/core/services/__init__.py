@@ -3,5 +3,5 @@ from .personas import PERSONAS
 
 __all__ = [
   'ChatbotService',
-  'Persona'
+  'PERSONAS'
           ] 
