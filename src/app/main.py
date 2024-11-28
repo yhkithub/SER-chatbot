@@ -27,18 +27,34 @@ EMOTION_MAPPING = {
 
 def get_emotion_from_gpt(prompt: str) -> str:
     """
-    GPT를 통해 텍스트 감정을 추론.
+    GPT를 통해 텍스트 감정을 추론하고 표준화된 값 반환.
     """
-    predefined_emotions = ["Anger", "Disgust", "Fear", "Happy", "Neutral", "Sad"]
+    predefined_emotions = {
+        "Happy": "Happy",
+        "Neutral": "Neutral",
+        "Sad": "Sad",
+        "Anger": "Anger",
+        "Fear": "Fear",
+        "Disgust": "Disgust",
+        "중립": "Neutral",
+        "분노": "Anger",
+        "행복": "Happy",
+        "슬픔": "Sad",
+        "두려움": "Fear",
+        "혐오": "Disgust"
+    }
+    
+    # GPT로부터 감정 예측
     emotion_prompt = (
         f"The user said: \"{prompt}\".\n"
-        f"Classify this input into one of these emotions: {', '.join(predefined_emotions)}.\n"
+        f"Classify this input into one of these emotions: {', '.join(predefined_emotions.keys())}.\n"
         f"Respond only with the emotion."
     )
-    
-    # OpenAI API 호출
     response = st.session_state.chatbot_service.get_response(emotion_prompt)
-    return response.strip()
+    
+    # 감정을 표준화된 형태로 변환
+    standardized_emotion = predefined_emotions.get(response.strip(), "Neutral")  # 기본값은 Neutral
+    return standardized_emotion
 
 
 def process_audio(waveform, target_sample_rate=16000, target_length=16000):
@@ -287,6 +303,33 @@ def main():
     
             # 화면 갱신
             st.rerun()
+
+    # # 텍스트 입력창
+    # if prompt := st.chat_input("메시지를 입력하세요..."):
+    #     if prompt.strip():
+    #         chatbot = st.session_state.chatbot_service
+    #         emotions = chatbot.analyze_emotion(prompt)
+    #         dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
+    #         response = chatbot.get_response(prompt)
+
+    #         current_time = datetime.now().strftime('%p %I:%M')
+    #         st.session_state.messages.append({
+    #             "role": "user",
+    #             "content": prompt,
+    #             "emotion": dominant_emotion,
+    #             "timestamp": current_time
+    #         })
+    #         st.session_state.messages.append({
+    #             "role": "assistant",
+    #             "content": response,
+    #             "timestamp": current_time
+    #         })
+
+    #         # 통계 업데이트
+    #         update_conversation_stats(dominant_emotion)
+
+    #         st.rerun()
+
 
 if __name__ == "__main__":
     main()
