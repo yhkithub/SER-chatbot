@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Dict
 from transformers import pipeline
 from langchain_openai import ChatOpenAI
+from src.core.data.personas import PERSONAS
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -25,19 +26,27 @@ class ChatbotService:
         results = self.emotion_classifier(text)
         return {score['label']: score['score'] for score in results[0]}
 
-    def get_response(self, user_input: str) -> str:
-        # 동기 방식으로 변경
+    def get_response(self, user_input: str, persona_name: str) -> str:
+        """
+        사용자 입력과 선택된 페르소나를 기반으로 GPT 응답 생성.
+        """
+        # 페르소나 프롬프트 가져오기
+        persona_prompt = PERSONAS.get(persona_name, "기본 페르소나 프롬프트")
+        
+        # 감정 분석
         emotions = self.analyze_emotion(user_input)
         dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
-        
+
+        # 프롬프트 생성
         prompt = f"""
-        사용자의 감정: {dominant_emotion}
+        {persona_prompt}
+
         사용자 메시지: {user_input}
-        
-        위 내용에 대해 공감적이고 지지적인 응답을 해주세요. 
-        필요한 경우 적절한 조언이나 위로의 말을 포함해주세요.
-        응답은 한국어로 해주세요.
+        사용자의 감정: {dominant_emotion}
+
+        [페르소나]의 답변:
         """
-        
+
+        # GPT 호출
         response = self.llm.invoke(prompt)
         return response.content
