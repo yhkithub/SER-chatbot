@@ -250,10 +250,7 @@ def main():
         initial_sidebar_state="expanded"
     )
 
-    # 커스텀 스타일 적용
-    apply_chat_styles()
-
-    # 세션 상태 초기화
+    # 상태 초기화
     if 'initialized' not in st.session_state:
         st.session_state.initialized = True
         st.session_state.chatbot_service = ChatbotService(OpenAIConfig())
@@ -263,7 +260,7 @@ def main():
             'timestamp': datetime.now().strftime('%p %I:%M')
         }]
         st.session_state.last_uploaded_audio = None
-        st.session_state.current_emotion = "분석된 감정 없음"
+        st.session_state.current_emotion = "Neutral"
         st.session_state.conversation_stats = {
             'total': 0,
             'positive': 0,
@@ -288,60 +285,61 @@ def main():
         st.session_state.selected_persona = selected_persona
 
         # 현재 감정 상태 표시
-        if 'current_emotion' in st.session_state:
-            st.markdown("### 현재 감정 상태")
-            emotion = st.session_state.current_emotion
-            emotion_color = get_emotion_color(emotion)  # 감정에 따른 색상 가져오기
-            st.markdown(f"""
-            <div style="
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                margin-top: 16px;
-            ">
-                <span style="
-                    background-color: {emotion_color};
-                    color: white;
-                    padding: 4px 12px;
-                    border-radius: 12px;
-                    font-weight: 600;
-                ">{emotion}</span>
-            </div>
-            """, unsafe_allow_html=True)
-    
-            # 대화 통계 표시
-            if 'conversation_stats' in st.session_state:
-                st.markdown("### 대화 통계")
-                stats = st.session_state.conversation_stats
-                st.write(f"- 총 대화 수: {stats.get('total', 0)}")
-                st.write(f"- 긍정적 감정: {stats.get('positive', 0)}")
-                st.write(f"- 부정적 감정: {stats.get('negative', 0)}")
-    
-            # 음성 파일 업로더
-            st.markdown("### 음성 파일 업로드")
-            uploaded_audio = st.file_uploader("지원 형식: WAV", type=["wav"])
-    
-            if uploaded_audio is not None and uploaded_audio != st.session_state.last_uploaded_audio:
-                st.session_state.last_uploaded_audio = uploaded_audio
-                handle_audio_upload(uploaded_audio)
+        st.markdown("### 현재 감정 상태")
+        emotion = st.session_state.current_emotion
+        emotion_color = get_emotion_color(emotion)
+        st.markdown(f"""
+        <div style="
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+        ">
+            <span style="
+                background-color: {emotion_color};
+                color: white;
+                padding: 4px 12px;
+                border-radius: 12px;
+                font-weight: 600;
+            ">{emotion}</span>
+        </div>
+        """, unsafe_allow_html=True)
 
+        # 대화 통계
+        stats = st.session_state.conversation_stats
+        st.markdown("### 대화 통계")
+        st.write(f"- 총 대화 수: {stats.get('total', 0)}")
+        st.write(f"- 긍정적 감정: {stats.get('positive', 0)}")
+        st.write(f"- 부정적 감정: {stats.get('negative', 0)}")
+
+        # 음성 파일 업로드
+        st.markdown("### 음성 파일 업로드")
+        uploaded_audio = st.file_uploader("지원 형식: WAV", type=["wav"])
+        if uploaded_audio is not None and uploaded_audio != st.session_state.last_uploaded_audio:
+            st.session_state.last_uploaded_audio = uploaded_audio
+            handle_audio_upload(uploaded_audio)
 
     # 메인 채팅 영역
     st.title("채팅")
 
     # 메시지 표시
+    for message in st.session_state.get('messages', []):
+        with st.chat_message(message["role"]):
+            display_message(message)
+
+    # 텍스트 입력 처리
     if prompt := st.chat_input("메시지를 입력하세요..."):
         if prompt.strip():
             chatbot = st.session_state.chatbot_service
             persona_name = st.session_state.get("selected_persona", "김소연 선생님")
-        
+
             # 감정 분석
             user_emotion = get_emotion_from_gpt(prompt)
-            st.session_state.current_emotion = user_emotion  # 현재 감정 상태 업데이트
-        
+            st.session_state.current_emotion = user_emotion
+
             # GPT 응답 생성
             response = chatbot.get_response(prompt, persona_name)
-        
+
             # 메시지 저장
             current_time = datetime.now().strftime('%p %I:%M')
             st.session_state.messages.append({
@@ -355,10 +353,12 @@ def main():
                 "content": response,
                 "timestamp": current_time
             })
-        
+
             # 화면 갱신
             st.rerun()
 
+if __name__ == "__main__":
+    main()
 
 
     # if prompt := st.chat_input("메시지를 입력하세요..."):
@@ -421,7 +421,3 @@ def main():
     #         update_conversation_stats(dominant_emotion)
 
     #         st.rerun()
-
-
-if __name__ == "__main__":
-    main()
