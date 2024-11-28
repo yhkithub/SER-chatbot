@@ -130,8 +130,8 @@ def handle_audio_upload(uploaded_audio):
 
         print(f"[DEBUG] 임시 파일 저장 완료: {temp_audio_path}")
 
-        # 텍스트 변환
-        with st.spinner("텍스트 변환 중..."):
+        # 음성 -> 텍스트 변환
+        with st.spinner("음성을 텍스트로 변환 중..."):
             audio_text = process_audio_file(uploaded_audio.read(), temp_audio_path)
             if not audio_text:
                 st.warning("음성에서 텍스트를 감지할 수 없습니다.")
@@ -144,6 +144,16 @@ def handle_audio_upload(uploaded_audio):
                 st.warning("음성 감정을 분석할 수 없습니다.")
                 return
 
+        # GPT를 통해 응답 생성
+        with st.spinner("GPT 응답 생성 중..."):
+            gpt_prompt = (
+                f"The user uploaded an audio file. Here is the transcribed text: '{audio_text}'.\n"
+                f"The detected emotion is '{audio_emotion}'.\n"
+                f"Based on this text and emotion, respond to the user in an empathetic and conversational way."
+            )
+            chatbot = st.session_state.chatbot_service
+            gpt_response = chatbot.get_response(gpt_prompt)
+
         # 결과 업데이트
         current_time = datetime.now().strftime('%p %I:%M')
         st.session_state.messages.append({
@@ -154,7 +164,7 @@ def handle_audio_upload(uploaded_audio):
         })
         st.session_state.messages.append({
             "role": "assistant",
-            "content": f"음성에서 '{audio_text}'를 감지했으며, 감정은 '{audio_emotion}'입니다.",
+            "content": gpt_response,
             "timestamp": current_time
         })
 
@@ -166,10 +176,64 @@ def handle_audio_upload(uploaded_audio):
         print(f"[ERROR] handle_audio_upload에서 오류 발생: {e}")
 
     finally:
-        # 모든 작업이 끝난 후 파일 삭제
+        # 임시 파일 삭제
         if os.path.exists(temp_audio_path):
             os.remove(temp_audio_path)
             print(f"[DEBUG] 임시 파일 삭제 완료: {temp_audio_path}")
+
+
+# def handle_audio_upload(uploaded_audio):
+#     """
+#     음성 파일 업로드 핸들러
+#     """
+#     temp_audio_path = "temp_audio.wav"
+#     try:
+#         # 임시 파일 저장
+#         with open(temp_audio_path, "wb") as f:
+#             f.write(uploaded_audio.getbuffer())
+
+#         print(f"[DEBUG] 임시 파일 저장 완료: {temp_audio_path}")
+
+#         # 텍스트 변환
+#         with st.spinner("텍스트 변환 중..."):
+#             audio_text = process_audio_file(uploaded_audio.read(), temp_audio_path)
+#             if not audio_text:
+#                 st.warning("음성에서 텍스트를 감지할 수 없습니다.")
+#                 return
+
+#         # 감정 분석
+#         with st.spinner("감정 분석 중..."):
+#             audio_emotion = predict_audio_emotion(temp_audio_path)
+#             if not audio_emotion:
+#                 st.warning("음성 감정을 분석할 수 없습니다.")
+#                 return
+
+#         # 결과 업데이트
+#         current_time = datetime.now().strftime('%p %I:%M')
+#         st.session_state.messages.append({
+#             "role": "user",
+#             "content": f"[음성 파일] 텍스트: {audio_text}",
+#             "emotion": audio_emotion,
+#             "timestamp": current_time
+#         })
+#         st.session_state.messages.append({
+#             "role": "assistant",
+#             "content": f"음성에서 '{audio_text}'를 감지했으며, 감정은 '{audio_emotion}'입니다.",
+#             "timestamp": current_time
+#         })
+
+#         update_conversation_stats(audio_emotion)
+#         print("[DEBUG] 메시지 업데이트 완료")
+
+#     except Exception as e:
+#         st.error(f"오류 발생: {e}")
+#         print(f"[ERROR] handle_audio_upload에서 오류 발생: {e}")
+
+#     finally:
+#         # 모든 작업이 끝난 후 파일 삭제
+#         if os.path.exists(temp_audio_path):
+#             os.remove(temp_audio_path)
+#             print(f"[DEBUG] 임시 파일 삭제 완료: {temp_audio_path}")
 
 
 
