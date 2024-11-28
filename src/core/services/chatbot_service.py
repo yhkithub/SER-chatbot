@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Dict
 from transformers import pipeline
 from langchain_openai import ChatOpenAI
-from src.core.services import PERSONAS
+from src.core.services.personas import PERSONAS
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
