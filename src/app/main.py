@@ -32,20 +32,22 @@ def get_emotion_from_gpt(prompt: str) -> str:
     predefined_emotions = ["Anger", "Disgust", "Fear", "Happy", "Neutral", "Sad"]
     emotion_prompt = (
         f"The user said: \"{prompt}\".\n"
-        f"Classify the user's input into one of the following emotions: {', '.join(predefined_emotions)}.\n"
-        f"Respond only with the emotion (e.g., Happy, Neutral, Sad). Do not include explanations or any other text."
+        f"Classify the user's input into one of these emotions: {', '.join(predefined_emotions)}.\n"
+        f"Respond ONLY with one of the following words: Anger, Disgust, Fear, Happy, Neutral, Sad.\n"
+        f"Do not include any explanation or additional text."
     )
-    
+
     # OpenAI API 호출
     response = st.session_state.chatbot_service.get_response(emotion_prompt)
-    print(f"[DEBUG] GPT Response: {response.strip()}")  # 디버깅 로그
+    print(f"[DEBUG] GPT Response: {response.strip()}")  # 디버깅용
+
     standardized_emotion = response.strip()
 
-    # 예상 범위 밖의 응답 처리
+    # 예상 범위를 벗어난 응답 처리
     if standardized_emotion not in predefined_emotions:
-        standardized_emotion = "Neutral"
+        print(f"[DEBUG] Unexpected emotion: {standardized_emotion}")  # 디버깅
+        standardized_emotion = "Neutral"  # 기본값
     return standardized_emotion
-
 
 
 
@@ -261,21 +263,20 @@ def main():
         with st.chat_message(message["role"]):
             display_message(message)
 
-    # 텍스트 입력창
     if prompt := st.chat_input("메시지를 입력하세요..."):
         if prompt.strip():
             chatbot = st.session_state.chatbot_service
-            
-            # GPT를 통해 감정을 받아오기
+    
+            # GPT를 통해 감정 분석
             dominant_emotion = get_emotion_from_gpt(prompt)
-            
-            # GPT 응답 생성
+    
+            # GPT로부터 응답 생성
             response = chatbot.get_response(prompt)
     
-            # 현재 시간 저장
+            # 현재 시간 기록
             current_time = datetime.now().strftime('%p %I:%M')
     
-            # 사용자 메시지 저장 (감정 포함)
+            # 사용자 메시지 저장
             st.session_state.messages.append({
                 "role": "user",
                 "content": prompt,
@@ -283,7 +284,7 @@ def main():
                 "timestamp": current_time
             })
     
-            # 챗봇 메시지 저장
+            # GPT 응답 메시지 저장
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": response,
@@ -295,6 +296,7 @@ def main():
     
             # 화면 갱신
             st.rerun()
+
 
     # # 텍스트 입력창
     # if prompt := st.chat_input("메시지를 입력하세요..."):
