@@ -9,6 +9,8 @@ from src.core.services.chatbot_service import ChatbotService
 from src.app.config import OpenAIConfig
 from src.utils.audio_handler import process_audio_file
 from src.components.message_display import apply_chat_styles, display_message, get_emotion_color
+from src.core.data.personas import PERSONAS
+
 
 # 음성 감정 인식 모델 설정
 model_name = "forwarder1121/ast-finetuned-model"
@@ -286,6 +288,10 @@ def main():
         4. 필요한 경우 적절한 조언이나 위로를 받을 수 있습니다.
         """)
 
+        st.markdown("### 페르소나 선택")
+        selected_persona = st.selectbox("페르소나를 선택하세요:", list(PERSONAS.keys()))
+        st.session_state.selected_persona = selected_persona
+
         # 현재 감정 상태 표시
         if 'current_emotion' in st.session_state:
             st.markdown("### 현재 감정 상태")
@@ -333,39 +339,65 @@ def main():
         with st.chat_message(message["role"]):
             display_message(message)
 
+    # 텍스트 입력 처리
     if prompt := st.chat_input("메시지를 입력하세요..."):
         if prompt.strip():
             chatbot = st.session_state.chatbot_service
+            persona_name = st.session_state.get("selected_persona", "김소연 선생님")
     
-            # GPT를 통해 감정 분석
-            dominant_emotion = get_emotion_from_gpt(prompt)
+            # GPT 응답 생성
+            response = chatbot.get_response(prompt, persona_name)
     
-            # GPT로부터 응답 생성
-            response = chatbot.get_response(prompt)
-    
-            # 현재 시간 기록
+            # 메시지 저장
             current_time = datetime.now().strftime('%p %I:%M')
-    
-            # 사용자 메시지 저장
             st.session_state.messages.append({
                 "role": "user",
                 "content": prompt,
-                "emotion": dominant_emotion,
                 "timestamp": current_time
             })
-    
-            # GPT 응답 메시지 저장
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": response,
                 "timestamp": current_time
             })
     
-            # 통계 업데이트
-            update_conversation_stats(dominant_emotion)
-    
             # 화면 갱신
             st.rerun()
+
+
+    # if prompt := st.chat_input("메시지를 입력하세요..."):
+    #     if prompt.strip():
+    #         chatbot = st.session_state.chatbot_service
+    
+    #         # GPT를 통해 감정 분석
+    #         dominant_emotion = get_emotion_from_gpt(prompt)
+    
+    #         # GPT로부터 응답 생성
+    #         response = chatbot.get_response(prompt)
+    
+    #         # 현재 시간 기록
+    #         current_time = datetime.now().strftime('%p %I:%M')
+    
+    #         # 사용자 메시지 저장
+    #         st.session_state.messages.append({
+    #             "role": "user",
+    #             "content": prompt,
+    #             "emotion": dominant_emotion,
+    #             "timestamp": current_time
+    #         })
+    
+    #         # GPT 응답 메시지 저장
+    #         st.session_state.messages.append({
+    #             "role": "assistant",
+    #             "content": response,
+    #             "timestamp": current_time
+    #         })
+    
+    #         # 통계 업데이트
+    #         update_conversation_stats(dominant_emotion)
+    
+    #         # 화면 갱신
+    #         st.rerun()
 
 
     # # 텍스트 입력창
