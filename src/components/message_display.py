@@ -171,13 +171,6 @@ def apply_chat_styles():
     """Apply custom styles for chat interface"""
     st.markdown("""
         <style>
-        /* 기본 앱 스타일: 전체 화면 사용 */
-        .stApp {
-            max-width: 100%;
-            margin: 0;
-            padding: 0;
-        }
-        
         /* 사용자 메시지 오른쪽 정렬 */
         .st-chat-message-user {
             flex-direction: row-reverse; /* 아이콘과 메시지를 오른쪽 정렬 */
@@ -218,25 +211,6 @@ def apply_chat_styles():
             border: none;
             border-radius: 0.5rem;
             padding: 0.8rem 1.5rem;
-        }
-        
-        /* 스크롤바 스타일 */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #1E1E1E;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #4A4A4A;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: #5A5A5A;
         }
         </style>
     """, unsafe_allow_html=True)
