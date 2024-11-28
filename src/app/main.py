@@ -25,6 +25,22 @@ EMOTION_MAPPING = {
     5: "Sad"
 }
 
+def get_emotion_from_gpt(prompt: str) -> str:
+    """
+    GPT를 통해 텍스트 감정을 추론.
+    """
+    predefined_emotions = ["Anger", "Disgust", "Fear", "Happy", "Neutral", "Sad"]
+    emotion_prompt = (
+        f"The user said: \"{prompt}\".\n"
+        f"Classify this input into one of these emotions: {', '.join(predefined_emotions)}.\n"
+        f"Respond only with the emotion."
+    )
+    
+    # OpenAI API 호출
+    response = st.session_state.chatbot_service.get_response(emotion_prompt)
+    return response.strip()
+
+
 def process_audio(waveform, target_sample_rate=16000, target_length=16000):
     """Process audio to correct format."""
     try:
@@ -241,28 +257,36 @@ def main():
     if prompt := st.chat_input("메시지를 입력하세요..."):
         if prompt.strip():
             chatbot = st.session_state.chatbot_service
-            emotions = chatbot.analyze_emotion(prompt)
-            dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
+            
+            # GPT를 통해 감정을 받아오기
+            dominant_emotion = get_emotion_from_gpt(prompt)
+            
+            # GPT 응답 생성
             response = chatbot.get_response(prompt)
-
+    
+            # 현재 시간 저장
             current_time = datetime.now().strftime('%p %I:%M')
+    
+            # 사용자 메시지 저장 (감정 포함)
             st.session_state.messages.append({
                 "role": "user",
                 "content": prompt,
                 "emotion": dominant_emotion,
                 "timestamp": current_time
             })
+    
+            # 챗봇 메시지 저장
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": response,
                 "timestamp": current_time
             })
-
+    
             # 통계 업데이트
             update_conversation_stats(dominant_emotion)
-
+    
+            # 화면 갱신
             st.rerun()
-
 
 if __name__ == "__main__":
     main()
