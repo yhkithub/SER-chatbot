@@ -113,6 +113,9 @@ def predict_audio_emotion(audio_path):
 
 
 def handle_audio_upload(uploaded_audio):
+    """
+    음성 파일 업로드 핸들러
+    """
     temp_audio_path = "temp_audio.wav"
     try:
         with open(temp_audio_path, "wb") as f:
@@ -136,7 +139,7 @@ def handle_audio_upload(uploaded_audio):
 
         # 감정 상태 업데이트
         st.session_state.current_emotion = audio_emotion
-        update_conversation_stats(audio_emotion)
+        update_conversation_stats(audio_emotion)  # 대화 통계 업데이트
 
         # 선택된 페르소나 가져오기
         persona_name = st.session_state.get("selected_persona", "김소연 선생님")
@@ -175,6 +178,9 @@ def handle_audio_upload(uploaded_audio):
         if os.path.exists(temp_audio_path):
             os.remove(temp_audio_path)
             print(f"[DEBUG] 임시 파일 삭제 완료: {temp_audio_path}")
+
+        # UI 강제 갱신
+        st.rerun()
 
 
 # def handle_audio_upload(uploaded_audio):
@@ -264,7 +270,7 @@ def main():
             'positive': 0,
             'negative': 0
         }
-        st.session_state.selected_persona = "김소연 선생님"  # 기본값
+        st.session_state.selected_persona = "김소연 선생님"  # 기본 페르소나
 
     # 사이드바
     with st.sidebar:
