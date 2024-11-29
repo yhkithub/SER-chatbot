@@ -1,55 +1,80 @@
-import speech_recognition as sr
+import torchaudio
+import torch
+import os
+from transformers import pipeline
 from pydub import AudioSegment
-import io
-import streamlit as st
+import speech_recognition as sr
 
-def convert_audio_to_text(wav_audio_data, language='ko-KR'):
-    """음성 데이터를 텍스트로 변환하는 함수"""
+# Lazy Initialization for Whisper
+def get_whisper_model():
+    global whisper_model
+    if 'whisper_model' not in globals():
+        whisper_model = pipeline(task="automatic-speech-recognition", model="openai/whisper-small")
+    return whisper_model
+
+def convert_with_google(audio_path):
+    """
+    Google Speech Recognition API를 사용하여 오디오를 텍스트로 변환
+    """
     try:
-        # WAV 데이터를 AudioSegment로 변환
-        audio = AudioSegment.from_file(io.BytesIO(wav_audio_data), format="wav")
-
-        # 파일 정보 디버깅 (콘솔 출력)
-        print(f"Audio Info: Channels={audio.channels}, Frame Rate={audio.frame_rate}, Duration={len(audio)}ms")
-
-        # 오디오를 16kHz, 모노로 표준화
-        audio = audio.set_frame_rate(16000).set_channels(1)
-
-        # 음성이 너무 짧은 경우 패딩 추가
-        if len(audio) < 1000:  # 1초 미만인 경우
-            silence = AudioSegment.silent(duration=1000 - len(audio))
-            audio = audio + silence
-
-        # Google API가 처리할 수 있는 형식으로 변환
-        audio_file = io.BytesIO()
-        audio.export(audio_file, format="wav")
-        audio_file.seek(0)
-
-        # 음성 인식
         recognizer = sr.Recognizer()
-        with sr.AudioFile(audio_file) as source:
+        with sr.AudioFile(audio_path) as source:
             audio_data = recognizer.record(source)
-        text = recognizer.recognize_google(audio_data, language=language)
+        text = recognizer.recognize_google(audio_data)
+        print(f"[DEBUG] Google Speech Recognition 결과: {text}")
         return text
     except sr.UnknownValueError:
+        print("[DEBUG] Google Speech Recognition이 텍스트를 감지하지 못했습니다.")
         return None
     except Exception as e:
-        print(f"음성 인식 중 오류 발생: {e}")  # 콘솔에 오류 출력
+        print(f"[ERROR] Google Speech Recognition 오류: {e}")
         return None
 
+def convert_with_whisper(audio_path):
+    """
+    Whisper 모델을 사용하여 오디오를 텍스트로 변환
+    """
+    try:
+        whisper_model = get_whisper_model()
+        waveform, sample_rate = torchaudio.load(audio_path)
+        print(f"[DEBUG] Waveform Shape: {waveform.shape}, Sample Rate: {sample_rate}")
 
-def process_audio_input(wav_audio_data, language_options=('ko-KR', 'en-US')):
-    """음성 입력을 처리하고 결과를 반환하는 함수"""
-    if wav_audio_data is not None:
-        # 음성 변환
-        for language in language_options:
-            try:
-                # 음성 인식
-                audio_text = convert_audio_to_text(wav_audio_data, language=language)
-                if audio_text:
-                    return audio_text, language
-            except Exception:
-                continue  # 다음 언어로 시도
+        # 16kHz로 리샘플링
+        if sample_rate != 16000:
+            resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
+            waveform = resampler(waveform)
 
-        # 텍스트 변환 실패
-        return None, None
+        result = whisper_model(waveform.squeeze().numpy())
+        text = result.get("text", "").strip()
+        print(f"[DEBUG] Whisper 결과: {text}")
+        return text
+    except Exception as e:
+        print(f"[ERROR] Whisper 처리 중 오류 발생: {e}")
+        return None
+
+def process_audio_file(audio_bytes, temp_audio_path="temp_audio.wav"):
+    """
+    Google API와 Whisper를 병행하여 오디오를 텍스트로 변환
+    """
+    try:
+        # 임시 파일 저장
+        with open(temp_audio_path, "wb") as f:
+            f.write(audio_bytes)
+
+        print(f"[DEBUG] 임시 파일 저장 완료: {temp_audio_path}")
+
+        # Google API 시도
+        google_text = convert_with_google(temp_audio_path)
+        if google_text:
+            return google_text  # Google API 성공
+
+        # Google 실패 시 Whisper 시도
+        print("[DEBUG] Google 실패, Whisper로 대체 시도...")
+        whisper_text = convert_with_whisper(temp_audio_path)
+        return whisper_text
+
+    except Exception as e:
+        print(f"[ERROR] Audio Processing Error: {e}")
+        return None
+    # 삭제는 여기서 하지 않음
+

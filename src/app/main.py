@@ -7,8 +7,9 @@ from transformers import AutoModelForAudioClassification, AutoProcessor
 import torchaudio.transforms as T
 from src.core.services.chatbot_service import ChatbotService
 from src.app.config import OpenAIConfig
-from src.utils.audio_handler import process_audio_input
+from src.utils.audio_handler import process_audio_file
 from src.components.message_display import apply_chat_styles, display_message, get_emotion_color
+from src.core.services.personas import PERSONAS
 
 # 음성 감정 인식 모델 설정
 model_name = "forwarder1121/ast-finetuned-model"
@@ -24,6 +25,30 @@ EMOTION_MAPPING = {
     4: "Neutral",
     5: "Sad"
 }
+
+
+def get_emotion_from_gpt(prompt: str) -> str:
+    """
+    GPT를 통해 텍스트 감정을 추론하고 표준화된 값 반환.
+    """
+    predefined_emotions = ["Anger", "Disgust", "Fear", "Happy", "Neutral", "Sad"]
+    emotion_prompt = (
+        f"The user said: \"{prompt}\".\n"
+        f"Classify the user's input into one of these emotions: {', '.join(predefined_emotions)}.\n"
+        f"Respond ONLY with the emotion name (e.g., Happy, Neutral).\n"
+    )
+
+    # OpenAI API 호출
+    response = st.session_state.chatbot_service.llm.invoke(emotion_prompt)
+    detected_emotion = response.content.strip()  # 응답에서 감정 추출
+    print(f"[DEBUG] Detected Emotion: {detected_emotion}")
+
+    if detected_emotion not in predefined_emotions:
+        print(f"[DEBUG] Unexpected emotion: {detected_emotion}")
+        detected_emotion = "Neutral"  # 기본값 설정
+
+    return detected_emotion
+
 
 def process_audio(waveform, target_sample_rate=16000, target_length=16000):
     """Process audio to correct format."""
@@ -49,29 +74,169 @@ def process_audio(waveform, target_sample_rate=16000, target_length=16000):
         st.error(f"Error in audio processing: {str(e)}")
         return None
 
+
 def predict_audio_emotion(audio_path):
     """Predict emotion from audio file."""
     try:
+        # 오디오 로드
         waveform, sample_rate = torchaudio.load(audio_path)
+        print(f"[DEBUG] 오디오 로드 완료: Waveform Shape: {waveform.shape}, Sample Rate: {sample_rate}")
+
+        # 오디오 전처리
         processed_waveform = process_audio(waveform, target_sample_rate=16000)
-
         if processed_waveform is None:
+            print("[ERROR] 오디오 전처리 실패")
             return None
+        print(f"[DEBUG] 전처리된 Waveform Shape: {processed_waveform.shape}")
 
+        # 모델 입력 생성
         inputs = processor(processed_waveform.squeeze(), sampling_rate=16000, return_tensors="pt")
+        print(f"[DEBUG] 모델 입력 생성 완료: {inputs.keys()}")
 
+        # 모델 예측
         with torch.no_grad():
             outputs = model(**inputs)
-        
-        predicted_class_idx = outputs.logits.argmax(-1).item()
+        print(f"[DEBUG] 모델 출력: {outputs.logits}")
 
-        if predicted_class_idx in EMOTION_MAPPING:
-            return EMOTION_MAPPING[predicted_class_idx]
-        return None
+        # 예측된 감정 인덱스
+        predicted_class_idx = outputs.logits.argmax(-1).item()
+        print(f"[DEBUG] 감정 분석 결과 Index: {predicted_class_idx}")
+
+        # 감정 매핑
+        emotion = EMOTION_MAPPING.get(predicted_class_idx, "Unknown")
+        print(f"[DEBUG] 감정 분석 결과 Emotion: {emotion}")
+        return emotion
 
     except Exception as e:
-        st.error(f"Error in emotion prediction: {str(e)}")
+        print(f"[ERROR] 감정 분석 중 오류 발생: {e}")
         return None
+
+
+def handle_audio_upload(uploaded_audio):
+    """
+    음성 파일 업로드 핸들러
+    """
+    temp_audio_path = "temp_audio.wav"
+    try:
+        with open(temp_audio_path, "wb") as f:
+            f.write(uploaded_audio.getbuffer())
+
+        print(f"[DEBUG] 임시 파일 저장 완료: {temp_audio_path}")
+
+        # 음성 -> 텍스트 변환
+        with st.spinner("음성을 텍스트로 변환 중..."):
+            audio_text = process_audio_file(uploaded_audio.read(), temp_audio_path)
+            if not audio_text:
+                st.warning("음성에서 텍스트를 감지할 수 없습니다.")
+                return
+
+        # 감정 분석
+        with st.spinner("감정 분석 중..."):
+            audio_emotion = predict_audio_emotion(temp_audio_path)
+            if not audio_emotion:
+                st.warning("음성 감정을 분석할 수 없습니다.")
+                return
+
+        # 감정 상태 업데이트
+        st.session_state.current_emotion = audio_emotion
+        update_conversation_stats(audio_emotion)  # 대화 통계 업데이트
+
+        # 선택된 페르소나 가져오기
+        persona_name = st.session_state.get("selected_persona", "김소연 선생님")
+
+        # GPT 응답 생성
+        with st.spinner("GPT 응답 생성 중..."):
+            gpt_prompt = (
+                f"The user uploaded an audio file. Here is the transcribed text: '{audio_text}'.\n"
+                f"The detected emotion is '{audio_emotion}'.\n"
+                f"Respond to the user in the selected persona: {persona_name}."
+            )
+            chatbot = st.session_state.chatbot_service
+            gpt_response = chatbot.get_response(gpt_prompt, persona_name)
+
+        # 메시지 업데이트
+        current_time = datetime.now().strftime('%p %I:%M')
+        st.session_state.messages.append({
+            "role": "user",
+            "content": f"[음성 파일] 텍스트: {audio_text}",
+            "emotion": audio_emotion,
+            "timestamp": current_time
+        })
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": gpt_response,
+            "timestamp": current_time
+        })
+
+        print("[DEBUG] 메시지 업데이트 완료")
+
+    except Exception as e:
+        st.error(f"오류 발생: {e}")
+        print(f"[ERROR] handle_audio_upload에서 오류 발생: {e}")
+
+    finally:
+        if os.path.exists(temp_audio_path):
+            os.remove(temp_audio_path)
+            print(f"[DEBUG] 임시 파일 삭제 완료: {temp_audio_path}")
+
+        # UI 강제 갱신
+        st.rerun()
+
+
+# def handle_audio_upload(uploaded_audio):
+#     """
+#     음성 파일 업로드 핸들러
+#     """
+#     temp_audio_path = "temp_audio.wav"
+#     try:
+#         # 임시 파일 저장
+#         with open(temp_audio_path, "wb") as f:
+#             f.write(uploaded_audio.getbuffer())
+
+#         print(f"[DEBUG] 임시 파일 저장 완료: {temp_audio_path}")
+
+#         # 텍스트 변환
+#         with st.spinner("텍스트 변환 중..."):
+#             audio_text = process_audio_file(uploaded_audio.read(), temp_audio_path)
+#             if not audio_text:
+#                 st.warning("음성에서 텍스트를 감지할 수 없습니다.")
+#                 return
+
+#         # 감정 분석
+#         with st.spinner("감정 분석 중..."):
+#             audio_emotion = predict_audio_emotion(temp_audio_path)
+#             if not audio_emotion:
+#                 st.warning("음성 감정을 분석할 수 없습니다.")
+#                 return
+
+#         # 결과 업데이트
+#         current_time = datetime.now().strftime('%p %I:%M')
+#         st.session_state.messages.append({
+#             "role": "user",
+#             "content": f"[음성 파일] 텍스트: {audio_text}",
+#             "emotion": audio_emotion,
+#             "timestamp": current_time
+#         })
+#         st.session_state.messages.append({
+#             "role": "assistant",
+#             "content": f"음성에서 '{audio_text}'를 감지했으며, 감정은 '{audio_emotion}'입니다.",
+#             "timestamp": current_time
+#         })
+
+#         update_conversation_stats(audio_emotion)
+#         print("[DEBUG] 메시지 업데이트 완료")
+
+#     except Exception as e:
+#         st.error(f"오류 발생: {e}")
+#         print(f"[ERROR] handle_audio_upload에서 오류 발생: {e}")
+
+#     finally:
+#         # 모든 작업이 끝난 후 파일 삭제
+#         if os.path.exists(temp_audio_path):
+#             os.remove(temp_audio_path)
+#             print(f"[DEBUG] 임시 파일 삭제 완료: {temp_audio_path}")
+
+
 
 def update_conversation_stats(emotion: str):
     """Update conversation statistics based on the detected emotion."""
@@ -81,74 +246,6 @@ def update_conversation_stats(emotion: str):
     elif emotion in ['Anger', 'Disgust', 'Fear', 'Sad']:
         st.session_state.conversation_stats['negative'] += 1
 
-def handle_audio_upload(uploaded_audio):
-    """Handle audio file upload and emotion prediction."""
-    try:
-        temp_file_path = "temp_audio.wav"
-        with open(temp_file_path, "wb") as f:
-            f.write(uploaded_audio.getbuffer())
-
-        with st.spinner('음성 분석 중...'):
-            # 텍스트 변환
-            audio_text, detected_language = process_audio_input(
-                uploaded_audio.read(),
-                language_options=('ko-KR', 'en-US')
-            )
-            
-            # 감정 분석
-            audio_emotion = predict_audio_emotion(temp_file_path)
-
-            # 메시지 추가
-            current_time = datetime.now().strftime('%p %I:%M')
-
-            if audio_emotion:
-                # `current_emotion` 업데이트
-                st.session_state.current_emotion = audio_emotion
-
-                # 텍스트와 감정 표시
-                if audio_text:
-                    st.session_state.messages.append({
-                        "role": "user",
-                        "content": f"[음성 파일이 업로드됨] {audio_text}",
-                        "emotion": audio_emotion,
-                        "timestamp": current_time
-                    })
-                    st.session_state.messages.append({
-                        "role": "assistant",
-                        "content": f"음성에서 감지된 텍스트는 '{audio_text}'이며, 감정은 '{audio_emotion}'입니다.",
-                        "timestamp": current_time
-                    })
-                else:
-                    st.session_state.messages.append({
-                        "role": "user",
-                        "content": "[음성 파일이 업로드됨]",
-                        "emotion": audio_emotion,
-                        "timestamp": current_time
-                    })
-                    st.session_state.messages.append({
-                        "role": "assistant",
-                        "content": f"음성에서 감지된 감정은 '{audio_emotion}'입니다.",
-                        "timestamp": current_time
-                    })
-
-                # 통계 업데이트
-                update_conversation_stats(audio_emotion)
-
-        # 파일 삭제
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
-
-        # 새로고침으로 즉시 반영
-        st.rerun()
-
-    except Exception as e:
-        st.error(f"음성 처리 중 오류가 발생했습니다: {str(e)}")
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
-        return False
-
-
-
 def main():
     st.set_page_config(
         page_title="감정인식 챗봇",
@@ -157,10 +254,7 @@ def main():
         initial_sidebar_state="expanded"
     )
 
-    # 커스텀 스타일 적용
-    apply_chat_styles()
-
-    # 세션 상태 초기화
+    # 상태 초기화
     if 'initialized' not in st.session_state:
         st.session_state.initialized = True
         st.session_state.chatbot_service = ChatbotService(OpenAIConfig())
@@ -170,12 +264,13 @@ def main():
             'timestamp': datetime.now().strftime('%p %I:%M')
         }]
         st.session_state.last_uploaded_audio = None
-        st.session_state.current_emotion = "분석된 감정 없음"
+        st.session_state.current_emotion = "Neutral"
         st.session_state.conversation_stats = {
             'total': 0,
             'positive': 0,
             'negative': 0
         }
+        st.session_state.selected_persona = "김소연 선생님"  # 기본 페르소나
 
     # 사이드바
     with st.sidebar:
@@ -189,44 +284,44 @@ def main():
         4. 필요한 경우 적절한 조언이나 위로를 받을 수 있습니다.
         """)
 
-        # 현재 감정 상태 표시
-        if 'current_emotion' in st.session_state:
-            st.markdown("### 현재 감정 상태")
-            emotion = st.session_state.current_emotion
-            emotion_color = get_emotion_color(emotion)  # 감정에 따른 색상 가져오기
-            st.markdown(f"""
-            <div style="
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                margin-top: 16px;
-            ">
-                <span style="
-                    background-color: {emotion_color};
-                    color: white;
-                    padding: 4px 12px;
-                    border-radius: 12px;
-                    font-weight: 600;
-                ">{emotion}</span>
-            </div>
-            """, unsafe_allow_html=True)
-    
-            # 대화 통계 표시
-            if 'conversation_stats' in st.session_state:
-                st.markdown("### 대화 통계")
-                stats = st.session_state.conversation_stats
-                st.write(f"- 총 대화 수: {stats.get('total', 0)}")
-                st.write(f"- 긍정적 감정: {stats.get('positive', 0)}")
-                st.write(f"- 부정적 감정: {stats.get('negative', 0)}")
-    
-            # 음성 파일 업로더
-            st.markdown("### 음성 파일 업로드")
-            uploaded_audio = st.file_uploader("지원 형식: WAV", type=["wav"])
-    
-            if uploaded_audio is not None and uploaded_audio != st.session_state.last_uploaded_audio:
-                st.session_state.last_uploaded_audio = uploaded_audio
-                handle_audio_upload(uploaded_audio)
+        st.markdown("### 페르소나 선택")
+        selected_persona = st.selectbox("페르소나를 선택하세요:", list(PERSONAS.keys()))
+        st.session_state.selected_persona = selected_persona
 
+        # 현재 감정 상태 표시
+        st.markdown("### 현재 감정 상태")
+        emotion = st.session_state.current_emotion
+        emotion_color = get_emotion_color(emotion)
+        st.markdown(f"""
+        <div style="
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+        ">
+            <span style="
+                background-color: {emotion_color};
+                color: white;
+                padding: 4px 12px;
+                border-radius: 12px;
+                font-weight: 600;
+            ">{emotion}</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # 대화 통계
+        stats = st.session_state.conversation_stats
+        st.markdown("### 대화 통계")
+        st.write(f"- 총 대화 수: {stats.get('total', 0)}")
+        st.write(f"- 긍정적 감정: {stats.get('positive', 0)}")
+        st.write(f"- 부정적 감정: {stats.get('negative', 0)}")
+
+        # 음성 파일 업로드
+        st.markdown("### 음성 파일 업로드")
+        uploaded_audio = st.file_uploader("지원 형식: WAV", type=["wav"])
+        if uploaded_audio is not None and uploaded_audio != st.session_state.last_uploaded_audio:
+            st.session_state.last_uploaded_audio = uploaded_audio
+            handle_audio_upload(uploaded_audio)
 
     # 메인 채팅 영역
     st.title("채팅")
@@ -234,21 +329,30 @@ def main():
     # 메시지 표시
     for message in st.session_state.get('messages', []):
         with st.chat_message(message["role"]):
-            display_message(message)
+            display_message(message, persona=selected_persona)
 
-    # 텍스트 입력창
+    # 텍스트 입력 처리
     if prompt := st.chat_input("메시지를 입력하세요..."):
         if prompt.strip():
             chatbot = st.session_state.chatbot_service
-            emotions = chatbot.analyze_emotion(prompt)
-            dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
-            response = chatbot.get_response(prompt)
-
+            persona_name = st.session_state.get("selected_persona", "김소연 선생님")
+    
+            # 감정 분석
+            user_emotion = get_emotion_from_gpt(prompt)
+            st.session_state.current_emotion = user_emotion  # 현재 감정 상태 업데이트
+    
+            # 대화 통계 업데이트
+            update_conversation_stats(user_emotion)
+    
+            # GPT 응답 생성
+            response = chatbot.get_response(prompt, persona_name)
+    
+            # 메시지 저장
             current_time = datetime.now().strftime('%p %I:%M')
             st.session_state.messages.append({
                 "role": "user",
                 "content": prompt,
-                "emotion": dominant_emotion,
+                "emotion": user_emotion,
                 "timestamp": current_time
             })
             st.session_state.messages.append({
@@ -256,12 +360,72 @@ def main():
                 "content": response,
                 "timestamp": current_time
             })
-
-            # 통계 업데이트
-            update_conversation_stats(dominant_emotion)
-
+    
+            # 화면 갱신
             st.rerun()
 
 
 if __name__ == "__main__":
     main()
+
+
+    # if prompt := st.chat_input("메시지를 입력하세요..."):
+    #     if prompt.strip():
+    #         chatbot = st.session_state.chatbot_service
+    
+    #         # GPT를 통해 감정 분석
+    #         dominant_emotion = get_emotion_from_gpt(prompt)
+    
+    #         # GPT로부터 응답 생성
+    #         response = chatbot.get_response(prompt)
+    
+    #         # 현재 시간 기록
+    #         current_time = datetime.now().strftime('%p %I:%M')
+    
+    #         # 사용자 메시지 저장
+    #         st.session_state.messages.append({
+    #             "role": "user",
+    #             "content": prompt,
+    #             "emotion": dominant_emotion,
+    #             "timestamp": current_time
+    #         })
+    
+    #         # GPT 응답 메시지 저장
+    #         st.session_state.messages.append({
+    #             "role": "assistant",
+    #             "content": response,
+    #             "timestamp": current_time
+    #         })
+    
+    #         # 통계 업데이트
+    #         update_conversation_stats(dominant_emotion)
+    
+    #         # 화면 갱신
+    #         st.rerun()
+
+
+    # # 텍스트 입력창
+    # if prompt := st.chat_input("메시지를 입력하세요..."):
+    #     if prompt.strip():
+    #         chatbot = st.session_state.chatbot_service
+    #         emotions = chatbot.analyze_emotion(prompt)
+    #         dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
+    #         response = chatbot.get_response(prompt)
+
+    #         current_time = datetime.now().strftime('%p %I:%M')
+    #         st.session_state.messages.append({
+    #             "role": "user",
+    #             "content": prompt,
+    #             "emotion": dominant_emotion,
+    #             "timestamp": current_time
+    #         })
+    #         st.session_state.messages.append({
+    #             "role": "assistant",
+    #             "content": response,
+    #             "timestamp": current_time
+    #         })
+
+    #         # 통계 업데이트
+    #         update_conversation_stats(dominant_emotion)
+
+    #         st.rerun()
