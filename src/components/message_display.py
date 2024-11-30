@@ -171,16 +171,21 @@ def apply_chat_styles():
     """Apply custom styles for chat interface"""
     st.markdown("""
         <style>
-        /* 사용자 메시지 오른쪽 정렬 */
-        .st-chat-message-user {
-            flex-direction: row-reverse; /* 아이콘과 메시지를 오른쪽 정렬 */
-            text-align: right;
+        /* 사용자 메시지의 컨테이너를 오른쪽으로 정렬 */
+        .st-emotion-cache-1qnuk07.st-emotion-cache-q9c2cg {
+            justify-content: flex-end;
+            flex-direction: row-reverse;
         }
         
-        /* 사용자 메시지 컨테이너 오른쪽 정렬 */
-        .st-chat-message-user .st-chat-message-content {
-            margin-left: auto; /* 메시지 내용 오른쪽으로 */
-            margin-right: 0;
+        /* 사용자 메시지의 아이콘을 오른쪽으로 이동 */
+        .st-emotion-cache-1qnuk07.st-emotion-cache-q9c2cg img {
+            order: 2;
+            margin-left: 10px;
+        }
+        
+        /* 사용자 메시지의 텍스트 오른쪽 정렬 */
+        .st-emotion-cache-1qnuk07.st-emotion-cache-q9c2cg .st-emotion-cache-q8sbsg {
+            text-align: right;
         }
 
         /* 챗봇 메시지 왼쪽 정렬 유지 */
