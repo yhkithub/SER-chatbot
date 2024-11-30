@@ -102,17 +102,18 @@ def apply_chat_styles():
     """Apply custom styles for chat interface"""
     st.markdown("""
         <style>
-        /* User messages - move icon to the right */
-        .st-emotion-container .st-chat-message-user {
-            flex-direction: row-reverse !important;
-            justify-content: flex-start !important;
-            text-align: right;
+        /* 사용자 메시지를 오른쪽으로 정렬 */
+        .stChatMessageUser {
+            flex-direction: row-reverse; /* 아이콘과 메시지의 순서를 반대로 */
+            align-self: flex-end; /* 메시지를 오른쪽으로 정렬 */
         }
-
-        /* Ensure user message content is aligned right */
-        .st-emotion-container .st-chat-message-user .st-chat-message-content {
-            margin-left: auto !important;
-            margin-right: 0 !important;
+        /* 사용자 메시지의 텍스트 컨텐츠를 오른쪽 정렬 */
+        .stChatMessageUser .element-container {
+            align-items: flex-end;
+        }
+        /* 사용자 메시지의 아이콘 여백 조정 */
+        .stChatMessageUser .stMarkdown {
+            text-align: right; /* 텍스트를 오른쪽 정렬 */
         }
 
         /* Assistant messages - keep default left alignment */
