@@ -101,6 +101,7 @@ def display_message(message: dict, persona: str = "default"):
 def apply_chat_styles():
     """Apply custom styles for chat interface"""
     st.markdown("""
+        <style>
         /* 사용자 메시지를 오른쪽으로 정렬 */
         .stChatMessage.stChatMessageUser {
             flex-direction: row-reverse;
