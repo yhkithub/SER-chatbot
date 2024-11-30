@@ -253,6 +253,9 @@ def main():
         layout="wide",
         initial_sidebar_state="expanded"
     )
+    
+    # 스타일 적용 함수 호출
+    apply_chat_styles()
 
     # 상태 초기화
     if 'initialized' not in st.session_state:
@@ -328,8 +331,8 @@ def main():
 
     # 메시지 표시
     for message in st.session_state.get('messages', []):
-        with st.chat_message(message["role"]):
-            display_message(message, persona=selected_persona)
+        display_message(message, persona=selected_persona)
+
 
     # 텍스트 입력 처리
     if prompt := st.chat_input("메시지를 입력하세요..."):
