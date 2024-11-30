@@ -103,7 +103,7 @@ def apply_chat_styles():
     st.markdown("""
         <style>
         /* 사용자 메시지를 오른쪽으로 정렬 */
-        .stChatMessage.stChatMessageUser {
+        [data-testid="stChatMessage"] [data-testid="stMessageUser"] {
             flex-direction: row-reverse;
             align-self: flex-end;
             text-align: right;
