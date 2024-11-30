@@ -168,108 +168,50 @@ def display_message(message: dict, persona: str = "default"):
 #         """, unsafe_allow_html=True)
 
 def apply_chat_styles():
-    """Apply comprehensive and modern styles for chat interface"""
+    """Apply custom styles for chat interface"""
     st.markdown("""
         <style>
-        /* 전체 채팅 인터페이스 스타일 */
-        [data-testid="stChatMessage"] {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-            max-width: 100%;
-        }
-
-        /* 사용자 메시지의 전체 컨테이너 방향 변경 */
-        [data-testid="stChatMessage"][data-sender="user"] {
+        /* User messages - move icon to the right */
+        .st-emotion-container .st-chat-message-user {
             flex-direction: row-reverse !important;
-            justify-content: flex-end !important;
-            align-items: flex-end !important;
-            text-align: right !important;
+            justify-content: flex-start !important;
+            text-align: right;
         }
 
-        /* 사용자 메시지 내용 오른쪽으로 이동 */
-        [data-testid="stChatMessage"][data-sender="user"] > div {
+        /* Ensure user message content is aligned right */
+        .st-emotion-container .st-chat-message-user .st-chat-message-content {
             margin-left: auto !important;
-            margin-right: 10px !important;
-        }
-
-        /* 사용자 아바타를 오른쪽으로 강제 이동 */
-        [data-testid="stChatMessage"][data-sender="user"] [data-testid="stChatMessageAvatar"] {
-            order: 2 !important;
-            margin-left: 10px !important;
             margin-right: 0 !important;
         }
 
-        [data-testid="stChatMessage"][data-sender="user"] > div {
-            margin-left: auto;
-            margin-right: 0;
-            background-color: #E6F2FF; /* 부드러운 파란색 배경 */
-            border-radius: 15px;
-            border-top-right-radius: 4px;
-        }
-
-        /* 챗봇 메시지 스타일 */
-        [data-testid="stChatMessage"][data-sender="assistant"] {
-            flex-direction: row;
-            justify-content: flex-start;
+        /* Assistant messages - keep default left alignment */
+        .st-emotion-container .st-chat-message-assistant {
+            flex-direction: row !important;
+            justify-content: flex-start !important;
             text-align: left;
         }
 
-        [data-testid="stChatMessage"][data-sender="assistant"] > div {
-            margin-right: auto;
-            margin-left: 0;
-            background-color: #F0F0F0; /* 연한 회색 배경 */
-            border-radius: 15px;
-            border-top-left-radius: 4px;
+        /* Ensure assistant message content is aligned left */
+        .st-emotion-container .st-chat-message-assistant .st-chat-message-content {
+            margin-right: auto !important;
+            margin-left: 0 !important;
         }
 
-        /* 아바타 스타일 */
-        [data-testid="stChatMessageAvatar"] {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin: 0 10px;
-        }
-
-        [data-testid="stChatMessage"][data-sender="user"] [data-testid="stChatMessageAvatar"] {
-            order: 2;
-        }
-
-        /* 메시지 내용 스타일 */
-        [data-testid="stChatMessageContent"] {
-            max-width: 75%;
-            padding: 12px 16px;
-            line-height: 1.4;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        /* 채팅 입력 영역 스타일 */
-        .stTextInput > div > div > input {
-            background-color: #F8F9FA;
-            border: 1px solid #E9ECEF;
-            border-radius: 10px;
-            padding: 10px 15px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-
-        .stTextInput > div > div > input:focus {
-            border-color: #007BFF;
-            box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
-        }
-
-        /* 전송 버튼 스타일 */
-        .stButton > button {
-            background-color: #007BFF;
+        /* Optional: Chat input and button styles */
+        .stTextInput input {
+            background-color: #2D2D2D;
             color: white;
             border: none;
-            border-radius: 10px;
-            padding: 10px 20px;
-            transition: background-color 0.3s ease;
+            border-radius: 0.5rem;
+            padding: 0.8rem;
         }
-
-        .stButton > button:hover {
-            background-color: #0056b3;
+        
+        .stButton button {
+            background-color: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.8rem 1.5rem;
         }
         </style>
     """, unsafe_allow_html=True)
