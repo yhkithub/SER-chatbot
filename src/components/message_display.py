@@ -26,7 +26,6 @@ def get_emotion_color(emotion: str) -> str:
 def display_message(message: dict, persona: str = "default"):
     """Display chat message content"""
     content = message.get('content', '')
-    st.markdown(content)
     timestamp = message.get('timestamp', '')
     emotion = message.get('emotion', '')
 
