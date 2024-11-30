@@ -254,8 +254,6 @@ def main():
         initial_sidebar_state="expanded"
     )
     
-    # 스타일 적용 함수 호출
-    apply_chat_styles()
 
     # 상태 초기화
     if 'initialized' not in st.session_state:
@@ -328,6 +326,9 @@ def main():
 
     # 메인 채팅 영역
     st.title("채팅")
+
+    # 스타일 적용 함수 호출
+    apply_chat_styles()
 
     # 메시지 표시
     for message in st.session_state.get('messages', []):
