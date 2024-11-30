@@ -61,7 +61,7 @@ def display_message(message: dict, persona: str = "default"):
                 </div>
             </div>
         """, unsafe_allow_html=True)
-
+        
     # User message (right side)
     else:
         background = get_emotion_color(emotion)
@@ -102,33 +102,31 @@ def apply_chat_styles():
     """Apply custom styles for chat interface"""
     st.markdown("""
         <style>
-        /* User messages - move icon to the right */
-        .st-emotion-container .st-chat-message-user {
-            flex-direction: row-reverse !important;
-            justify-content: flex-start !important;
+        /* 사용자 메시지 오른쪽 정렬 */
+        .st-chat-message-user {
+            flex-direction: row-reverse; /* 아이콘과 메시지를 오른쪽 정렬 */
             text-align: right;
         }
-
-        /* Ensure user message content is aligned right */
-        .st-emotion-container .st-chat-message-user .st-chat-message-content {
-            margin-left: auto !important;
-            margin-right: 0 !important;
+        
+        /* 사용자 메시지 컨테이너 오른쪽 정렬 */
+        .st-chat-message-user .st-chat-message-content {
+            margin-left: auto; /* 메시지 내용 오른쪽으로 */
+            margin-right: 0;
         }
 
-        /* Assistant messages - keep default left alignment */
-        .st-emotion-container .st-chat-message-assistant {
-            flex-direction: row !important;
-            justify-content: flex-start !important;
+        /* 챗봇 메시지 왼쪽 정렬 유지 */
+        .st-chat-message-assistant {
+            flex-direction: row;
             text-align: left;
         }
 
-        /* Ensure assistant message content is aligned left */
-        .st-emotion-container .st-chat-message-assistant .st-chat-message-content {
-            margin-right: auto !important;
-            margin-left: 0 !important;
+        /* 챗봇 메시지 컨테이너 왼쪽 정렬 */
+        .st-chat-message-assistant .st-chat-message-content {
+            margin-right: auto;
+            margin-left: 0;
         }
 
-        /* Optional: Chat input and button styles */
+        /* 채팅 입력창 스타일 */
         .stTextInput input {
             background-color: #2D2D2D;
             color: white;
@@ -137,6 +135,7 @@ def apply_chat_styles():
             padding: 0.8rem;
         }
         
+        /* 버튼 스타일 */
         .stButton button {
             background-color: #007AFF;
             color: white;
