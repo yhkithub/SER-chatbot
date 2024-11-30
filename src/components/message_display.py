@@ -101,19 +101,22 @@ def display_message(message: dict, persona: str = "default"):
 def apply_chat_styles():
     """Apply custom styles for chat interface"""
     st.markdown("""
-        <style>
         /* 사용자 메시지를 오른쪽으로 정렬 */
-        .stChatMessageUser {
-            flex-direction: row-reverse; /* 아이콘과 메시지의 순서를 반대로 */
-            align-self: flex-end; /* 메시지를 오른쪽으로 정렬 */
+        .stChatMessage.stChatMessageUser {
+            flex-direction: row-reverse;
+            align-self: flex-end;
+            text-align: right;
         }
-        /* 사용자 메시지의 텍스트 컨텐츠를 오른쪽 정렬 */
-        .stChatMessageUser .element-container {
-            align-items: flex-end;
+
+        /* 사용자 메시지 내용 오른쪽 정렬 */
+        .stChatMessage.stChatMessageUser .stMarkdown {
+            text-align: right;
         }
-        /* 사용자 메시지의 아이콘 여백 조정 */
-        .stChatMessageUser .stMarkdown {
-            text-align: right; /* 텍스트를 오른쪽 정렬 */
+
+        /* 사용자 아이콘 간격 조정 */
+        .stChatMessage.stChatMessageUser .stChatMessageAvatar {
+            margin-left: 0.5rem;
+            margin-right: 0;
         }
 
         /* Assistant messages - keep default left alignment */
