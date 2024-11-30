@@ -168,54 +168,94 @@ def display_message(message: dict, persona: str = "default"):
 #         """, unsafe_allow_html=True)
 
 def apply_chat_styles():
-    """Apply custom styles for chat interface"""
+    """Apply comprehensive and modern styles for chat interface"""
     st.markdown("""
         <style>
-        /* 사용자 메시지의 컨테이너를 오른쪽으로 정렬 */
-        .st-emotion-cache-1qnuk07.st-emotion-cache-q9c2cg {
-            justify-content: flex-end;
+        /* 전체 채팅 인터페이스 스타일 */
+        [data-testid="stChatMessage"] {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            max-width: 100%;
+        }
+
+        /* 사용자 메시지 스타일 */
+        [data-testid="stChatMessage"][data-sender="user"] {
             flex-direction: row-reverse;
-        }
-        
-        /* 사용자 메시지의 아이콘을 오른쪽으로 이동 */
-        .st-emotion-cache-1qnuk07.st-emotion-cache-q9c2cg img {
-            order: 2;
-            margin-left: 10px;
-        }
-        
-        /* 사용자 메시지의 텍스트 오른쪽 정렬 */
-        .st-emotion-cache-1qnuk07.st-emotion-cache-q9c2cg .st-emotion-cache-q8sbsg {
+            justify-content: flex-end;
             text-align: right;
         }
 
-        /* 챗봇 메시지 왼쪽 정렬 유지 */
-        .st-chat-message-assistant {
+        [data-testid="stChatMessage"][data-sender="user"] > div {
+            margin-left: auto;
+            margin-right: 0;
+            background-color: #E6F2FF; /* 부드러운 파란색 배경 */
+            border-radius: 15px;
+            border-top-right-radius: 4px;
+        }
+
+        /* 챗봇 메시지 스타일 */
+        [data-testid="stChatMessage"][data-sender="assistant"] {
             flex-direction: row;
+            justify-content: flex-start;
             text-align: left;
         }
 
-        /* 챗봇 메시지 컨테이너 왼쪽 정렬 */
-        .st-chat-message-assistant .st-chat-message-content {
+        [data-testid="stChatMessage"][data-sender="assistant"] > div {
             margin-right: auto;
             margin-left: 0;
+            background-color: #F0F0F0; /* 연한 회색 배경 */
+            border-radius: 15px;
+            border-top-left-radius: 4px;
         }
 
-        /* 채팅 입력창 스타일 */
-        .stTextInput input {
-            background-color: #2D2D2D;
-            color: white;
-            border: none;
-            border-radius: 0.5rem;
-            padding: 0.8rem;
+        /* 아바타 스타일 */
+        [data-testid="stChatMessageAvatar"] {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0 10px;
         }
-        
-        /* 버튼 스타일 */
-        .stButton button {
-            background-color: #007AFF;
+
+        [data-testid="stChatMessage"][data-sender="user"] [data-testid="stChatMessageAvatar"] {
+            order: 2;
+        }
+
+        /* 메시지 내용 스타일 */
+        [data-testid="stChatMessageContent"] {
+            max-width: 75%;
+            padding: 12px 16px;
+            line-height: 1.4;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* 채팅 입력 영역 스타일 */
+        .stTextInput > div > div > input {
+            background-color: #F8F9FA;
+            border: 1px solid #E9ECEF;
+            border-radius: 10px;
+            padding: 10px 15px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .stTextInput > div > div > input:focus {
+            border-color: #007BFF;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+        }
+
+        /* 전송 버튼 스타일 */
+        .stButton > button {
+            background-color: #007BFF;
             color: white;
             border: none;
-            border-radius: 0.5rem;
-            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            padding: 10px 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        .stButton > button:hover {
+            background-color: #0056b3;
         }
         </style>
     """, unsafe_allow_html=True)
