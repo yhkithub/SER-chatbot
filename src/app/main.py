@@ -331,8 +331,9 @@ def main():
     
     # 메시지 표시
     for message in st.session_state.get('messages', []):
-        st.chat_message(message["role"], content=message["content"])
-        display_message(message, persona=selected_persona)
+        with st.chat_message(message["role"]):
+            display_message(message)
+            pass
 
     # 텍스트 입력 처리
     if prompt := st.chat_input("메시지를 입력하세요..."):
