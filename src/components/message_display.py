@@ -24,9 +24,9 @@ def get_emotion_color(emotion: str) -> str:
     return emotion_colors.get(emotion, '#FFD700')  # Default to gold for neutral
 
 def display_message(message: dict, persona: str = "default"):
-    """Display chat message with persona-based icon styling"""
-    role = message.get('role', '')
+    """Display chat message content"""
     content = message.get('content', '')
+    st.markdown(content)
     timestamp = message.get('timestamp', '')
     emotion = message.get('emotion', '')
 
