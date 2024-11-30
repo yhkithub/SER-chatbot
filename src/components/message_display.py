@@ -179,11 +179,25 @@ def apply_chat_styles():
             max-width: 100%;
         }
 
-        /* 사용자 메시지 스타일 */
+        /* 사용자 메시지의 전체 컨테이너 방향 변경 */
         [data-testid="stChatMessage"][data-sender="user"] {
-            flex-direction: row-reverse;
-            justify-content: flex-end;
-            text-align: right;
+            flex-direction: row-reverse !important;
+            justify-content: flex-end !important;
+            align-items: flex-end !important;
+            text-align: right !important;
+        }
+
+        /* 사용자 메시지 내용 오른쪽으로 이동 */
+        [data-testid="stChatMessage"][data-sender="user"] > div {
+            margin-left: auto !important;
+            margin-right: 10px !important;
+        }
+
+        /* 사용자 아바타를 오른쪽으로 강제 이동 */
+        [data-testid="stChatMessage"][data-sender="user"] [data-testid="stChatMessageAvatar"] {
+            order: 2 !important;
+            margin-left: 10px !important;
+            margin-right: 0 !important;
         }
 
         [data-testid="stChatMessage"][data-sender="user"] > div {
