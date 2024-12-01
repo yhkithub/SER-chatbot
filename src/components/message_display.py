@@ -24,6 +24,7 @@ def get_emotion_color(emotion: str) -> str:
     return emotion_colors.get(emotion, '#FFD700')  # Default to gold for neutral
 
 def display_message(message: dict, persona: str = "default"):
+<<<<<<< HEAD
     """Display chat message with persona-based icon styling"""
     role = message.get('role', '')
     content = message.get('content', '')
@@ -94,9 +95,86 @@ def display_message(message: dict, persona: str = "default"):
                         ">{emotion}</span>
                         <span style="font-size: 0.75rem; color: #333;">{timestamp}</span>
                     </div>
+=======
+    """Display chat message with persona-based styling"""
+    try:
+        content = message.get('content', '')
+        timestamp = message.get('timestamp', '')
+        emotion = message.get('emotion', '')
+        
+        # 사용자 메시지
+        if message.get('role') == 'user':
+            st.markdown(f"""
+                <div class="user-message">
+                    <div class="message-content">{content}</div>
+                    <div class="message-info">
+                        <span class="emotion-tag">{emotion}</span>
+                        <span class="timestamp">{timestamp}</span>
+                    </div>
                 </div>
-            </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+            
+        # 챗봇 메시지
+        else:
+            st.markdown(f"""
+                <div class="bot-message">
+                    <div class="message-content">{content}</div>
+                    <div class="timestamp">{timestamp}</div>
+>>>>>>> 7b5f7e1 (feat: 대화 통계 기능 추가 및 페르소나 전환 버그 수정)
+                </div>
+            """, unsafe_allow_html=True)
+            
+    except Exception as e:
+        st.error(f"메시지 표시 중 오류 발생: {str(e)}")
+
+def apply_chat_styles():
+    """Apply custom styles for chat interface"""
+    st.markdown("""
+        <style>
+        /* 사용자 메시지 오른쪽 정렬 */
+        .st-chat-message-user {
+            flex-direction: row-reverse; /* 아이콘과 메시지를 오른쪽 정렬 */
+            text-align: right;
+        }
+        
+        /* 사용자 메시지 컨테이너 오른쪽 정렬 */
+        .st-chat-message-user .st-chat-message-content {
+            margin-left: auto; /* 메시지 내용 오른쪽으로 */
+            margin-right: 0;
+        }
+
+        /* 챗봇 메시지 왼쪽 정렬 유지 */
+        .st-chat-message-assistant {
+            flex-direction: row;
+            text-align: left;
+        }
+
+        /* 챗봇 메시지 컨테이너 왼쪽 정렬 */
+        .st-chat-message-assistant .st-chat-message-content {
+            margin-right: auto;
+            margin-left: 0;
+        }
+
+        /* 채팅 입력창 스타일 */
+        .stTextInput input {
+            background-color: #2D2D2D;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.8rem;
+        }
+        
+        /* 버튼 스타일 */
+        .stButton button {
+            background-color: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.8rem 1.5rem;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
 
 
 # def display_message(message: dict):
