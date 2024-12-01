@@ -1,19 +1,24 @@
 import streamlit as st
 from datetime import datetime
-
-from src.core.services.chatbot_service import ChatbotService
 from src.app.config import OpenAIConfig
+from src.app.constants import DEFAULT_PERSONA
 
-def initialize_session_state():
+def initialize_chatbot_service():
+    """ChatbotService 초기화"""
+    from src.core.services.chatbot_service import ChatbotService
+    return ChatbotService(OpenAIConfig())
+
+def initialize_session_state(selected_persona: str = None):
     """세션 상태 초기화"""
-    # 최초 한 번만 초기화
     if 'initialized' not in st.session_state:
         st.session_state.initialized = True
         
+        # 페르소나 설정
+        st.session_state.selected_persona = selected_persona or DEFAULT_PERSONA
+        
         # 챗봇 서비스 초기화
         if 'chatbot_service' not in st.session_state:
-            chatbot_service = ChatbotService(OpenAIConfig())
-            st.session_state.chatbot_service = chatbot_service
+            st.session_state.chatbot_service = initialize_chatbot_service()
         
         # 메시지 초기화
         if 'messages' not in st.session_state:

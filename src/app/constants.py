@@ -6,7 +6,10 @@ PERSONA_IMAGES = {
     "박준호 팀장님": "https://github.com/user-attachments/assets/04a9a0b2-8804-4a66-9c79-cd0b8501ce6d",
     "장난꾸러기 동생 민준이": "https://github.com/user-attachments/assets/2b83f37a-7282-4660-9495-9383f0f89f03",
     "10년지기 친구 이동환": "https://github.com/user-attachments/assets/d8d6249f-fb71-4d06-a94e-8619246f8ee3",
-    "학교 후배 정서윤": "https://github.com/user-attachments/assets/52ba99fc-635b-434d-aa87-7ddad37e8955"
+    "학교 후배 정서윤": "https://github.com/user-attachments/assets/52ba99fc-635b-434d-aa87-7ddad37e8955",
+    "친구": "assets/images/friend_persona.png",
+    "상담사": "assets/images/counselor_persona.png",
+    "멘토": "assets/images/mentor_persona.png"
 }
 
 # 페르소나 프롬프트
@@ -69,4 +72,15 @@ DEFAULT_PERSONA = "김소연 선생님"
 DEFAULT_EMOTION = "Neutral"
 
 # 메시지 템플릿
-WELCOME_MESSAGE_TEMPLATE = "안녕하세요! 저는 {persona}입니다. 오늘 하루는 어떠셨나요? 기분이나 감정을 자유롭게 이야기해주세요. 😊" 
+WELCOME_MESSAGE_TEMPLATE = "안녕하세요! 저는 {persona}입니다. 오늘 하루는 어떠셨나요? 기분이나 감정을 자유롭게 이야기해주세요. 😊"
+
+# 페르소나 URL 매핑
+PERSONA_URL_MAPPING = {
+    "김소연 선생님": "teacher",
+    "박준호 팀장님": "manager",
+    "장난꾸러기 동생 민준이": "child",
+    "10년지기 친구 이동환": "friend",
+    "학교 후배 정서윤": "junior"
+}
+
+PERSONA_NAME_MAPPING = {v: k for k, v in PERSONA_URL_MAPPING.items()}

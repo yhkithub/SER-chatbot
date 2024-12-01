@@ -80,3 +80,15 @@ def render_sidebar():
                 positive=st.session_state.conversation_stats.get('positive', 0),
                 negative=st.session_state.conversation_stats.get('negative', 0)
             ), unsafe_allow_html=True)
+        
+        # 홈으로 돌아가기 버튼
+        if st.button("← 다른 페르소나 선택하기", key="change_persona_button"):
+            # 세션 상태 완전 초기화
+            clear_session_state()
+            
+            # URL 파라미터 초기화
+            st.query_params.clear()
+            st.query_params["page"] = "home"
+            
+            # 페이지 새로고침
+            st.rerun()
