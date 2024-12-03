@@ -18,7 +18,7 @@ def render_sidebar():
             4. 필요한 경우 적절한 조언이나 위로를 받을 수 있습니다.
         """)
         
-        # 현재 선택된 페르소나 표시
+        # 현재 선택된 페르소나 표시 
         if 'selected_persona' in st.session_state:
             st.markdown(f"### 현재 대화 상대: {st.session_state.selected_persona}")
         
