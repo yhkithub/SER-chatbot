@@ -18,67 +18,80 @@ except Exception as e:
 
 class RAGUtils:
     def __init__(self):
-        # API 키 직접 가져오기
+        print("\n=== Starting RAGUtils Initialization ===")
+        
+        # 환경변수 확인
         api_key = os.getenv("PINECONE_API_KEY")
         environment = os.getenv("PINECONE_ENVIRONMENT")
         self.index_name = os.getenv("PINECONE_INDEX_NAME")
         
-        # 환경변수 확인
-        print("\n=== RAGUtils Initialization ===")
-        print(f"API Key length: {len(api_key) if api_key else 'None'}")
-        print(f"Environment: {environment}")
-        print(f"Index Name: {self.index_name}")
+        print("Environment Variables Check:")
+        print(f"PINECONE_API_KEY present: {'Yes' if api_key else 'No'}")
+        print(f"PINECONE_ENVIRONMENT: {environment}")
+        print(f"PINECONE_INDEX_NAME: {self.index_name}")
         
         if not all([api_key, environment, self.index_name]):
-            print("Warning: Missing required environment variables")
-            print("Make sure to set PINECONE_API_KEY, PINECONE_ENVIRONMENT, and PINECONE_INDEX_NAME")
-            return  # 초기화 중단
-
-        # 384차원 임베딩 모델 초기화
-        self.embeddings = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2"  # 384차원 임베딩
-        )
+            missing_vars = []
+            if not api_key: missing_vars.append("PINECONE_API_KEY")
+            if not environment: missing_vars.append("PINECONE_ENVIRONMENT")
+            if not self.index_name: missing_vars.append("PINECONE_INDEX_NAME")
+            error_msg = f"Missing environment variables: {', '.join(missing_vars)}"
+            print(f"Initialization Error: {error_msg}")
+            raise ValueError(error_msg)
         
-        # Pinecone 초기화
+        print("\nInitializing components:")
+        
+        # Embeddings 모델 초기화
+        print("1. Initializing embeddings model...")
+        try:
+            self.embeddings = HuggingFaceEmbeddings(
+                model_name="sentence-transformers/all-MiniLM-L6-v2"
+            )
+            print("✓ Embeddings model initialized successfully")
+        except Exception as e:
+            print(f"✗ Failed to initialize embeddings model: {str(e)}")
+            raise
+        
+        # Pinecone 클라이언트 초기화
+        print("\n2. Initializing Pinecone client...")
         try:
             self.pc = Pinecone(
                 api_key=api_key,
                 environment=environment
             )
-            print("Pinecone client initialized successfully")
+            print("✓ Pinecone client initialized successfully")
+        except Exception as e:
+            print(f"✗ Failed to initialize Pinecone client: {str(e)}")
+            raise
+        
+        # 인덱스 확인
+        print("\n3. Checking Pinecone index...")
+        try:
+            indexes = self.pc.list_indexes()
+            print(f"Available indexes: {indexes.names()}")
             
-            # 새 인덱스 생성 (기존 인덱스가 없는 경우)
-            try:
-                indexes = self.pc.list_indexes()
-                if self.index_name not in indexes.names():
-                    print(f"\nCreating new index: {self.index_name}")
-                    self.pc.create_index(
-                        name=self.index_name,
-                        dimension=384,  # MiniLM 모델의 임베딩 차원
-                        metric='cosine',
-                        spec=ServerlessSpec(
-                            cloud="aws",
-                            region="us-east-1"
-                        )
-                    )
-                    print("Index created successfully")
-                else:
-                    print(f"\nUsing existing index: {self.index_name}")
-            except Exception as e:
-                print(f"Error with index operations: {str(e)}")
-                raise
-            
-            # Langchain Pinecone 벡터스토어 초기화
+            if self.index_name not in indexes.names():
+                print(f"✗ Index '{self.index_name}' not found in available indexes")
+                raise ValueError(f"Index '{self.index_name}' does not exist")
+            print(f"✓ Found index: {self.index_name}")
+        except Exception as e:
+            print(f"✗ Failed to check indexes: {str(e)}")
+            raise
+        
+        # Vectorstore 초기화
+        print("\n4. Initializing vector store...")
+        try:
             self.vectorstore = LangchainPinecone.from_existing_index(
                 index_name=self.index_name,
                 embedding=self.embeddings,
                 namespace=""
             )
-            print("Vectorstore initialized successfully")
-            
+            print("✓ Vector store initialized successfully")
         except Exception as e:
-            print(f"\nError in RAGUtils initialization: {str(e)}")
+            print(f"✗ Failed to initialize vector store: {str(e)}")
             raise
+        
+        print("\n=== RAGUtils Initialization Completed Successfully ===\n")
 
     def retrieve_relevant_context(self, query: str, k: int = 3) -> List[Dict[str, Any]]:
         """
