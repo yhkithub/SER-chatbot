@@ -16,11 +16,18 @@ class ChatbotService:
             temperature=openai_config.temperature
         )
         self._initialize_emotion_classifier()
+        
+        # RAG 초기화 시도
         try:
             self.rag_utils = RAGUtils()
             self.rag_enabled = True
+            print("RAG functionality enabled successfully")
         except Exception as e:
-            print(f"Warning: RAG initialization failed: {str(e)}")
+            print(f"\n=== RAG Initialization Failed ===")
+            print(f"Error: {str(e)}")
+            print("Falling back to basic chat mode without RAG")
+            print("To enable RAG, please check your Pinecone settings")
+            print("=== End RAG Error ===\n")
             self.rag_enabled = False
 
     def _initialize_emotion_classifier(self):
@@ -41,31 +48,24 @@ class ChatbotService:
 
     @handle_streamlit_errors
     def get_response(self, user_input: str, persona_name: str) -> Tuple[str, List[Dict[str, Any]]]:
-        """
-        사용자 입력에 대한 페르소나 기반 응답 생성
-        
-        Returns:
-            Tuple[str, List[Dict]]: (챗봇 응답, 참고한 문서 목록)
-        """
-        print(f"\n=== GPT 응답 생성 디버그 ===")
-        print(f"요청된 페르소나: {persona_name}")
+        print(f"\n=== Generating Response ===")
+        print(f"Persona: {persona_name}")
+        print(f"RAG Enabled: {self.rag_enabled}")
         
         persona_prompt = PERSONA_PROMPTS.get(persona_name, PERSONA_PROMPTS[DEFAULT_PERSONA])
-        print(f"선택된 페르소나: {persona_name}")
         
         try:
             if self.rag_enabled:
+                print("Attempting to retrieve relevant context...")
                 augmented_prompt, reference_docs = self.rag_utils.get_augmented_prompt(user_input, persona_name)
-                print("\n=== Reference Documents ===")
-                print(f"Number of docs: {len(reference_docs)}")
-                for doc in reference_docs:
-                    print(f"Document: {doc}")
-                print("=== End Reference Documents ===\n")
+                print(f"Retrieved {len(reference_docs)} relevant documents")
             else:
+                print("RAG is disabled, using basic chat mode")
                 augmented_prompt = ""
                 reference_docs = []
         except Exception as e:
-            print(f"Warning: RAG retrieval failed: {str(e)}")
+            print(f"Error during RAG retrieval: {str(e)}")
+            print("Falling back to basic chat mode for this response")
             augmented_prompt = ""
             reference_docs = []
         
