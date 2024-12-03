@@ -1,8 +1,8 @@
 from typing import List, Dict, Any, Tuple
 from pinecone import Pinecone, ServerlessSpec
-from langchain.vectorstores import Pinecone as LangchainPinecone
+from langchain_community.vectorstores import Pinecone as LangchainPinecone
 from sentence_transformers import SentenceTransformer
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 import os
 from dotenv import load_dotenv, find_dotenv
 import requests
