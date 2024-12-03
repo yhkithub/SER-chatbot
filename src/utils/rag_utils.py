@@ -9,9 +9,12 @@ import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-# 환경변수 로드
-env_path = find_dotenv(raise_error_if_not_found=True)
-load_dotenv(env_path, override=True)
+# 환경변수 로드 (파일이 없어도 계속 진행)
+try:
+    env_path = find_dotenv(raise_error_if_not_found=False)
+    load_dotenv(env_path)
+except Exception as e:
+    print(f"Warning: Could not load .env file: {str(e)}")
 
 class RAGUtils:
     def __init__(self):
@@ -19,7 +22,7 @@ class RAGUtils:
         api_key = os.getenv("PINECONE_API_KEY")
         environment = os.getenv("PINECONE_ENVIRONMENT")
         self.index_name = os.getenv("PINECONE_INDEX_NAME")
-
+        
         # 환경변수 확인
         print("\n=== RAGUtils Initialization ===")
         print(f"API Key length: {len(api_key) if api_key else 'None'}")
@@ -27,7 +30,9 @@ class RAGUtils:
         print(f"Index Name: {self.index_name}")
         
         if not all([api_key, environment, self.index_name]):
-            raise ValueError("Missing required environment variables")
+            print("Warning: Missing required environment variables")
+            print("Make sure to set PINECONE_API_KEY, PINECONE_ENVIRONMENT, and PINECONE_INDEX_NAME")
+            return  # 초기화 중단
 
         # 384차원 임베딩 모델 초기화
         self.embeddings = HuggingFaceEmbeddings(
