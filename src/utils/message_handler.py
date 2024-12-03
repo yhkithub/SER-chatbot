@@ -19,8 +19,15 @@ def handle_message_submission(prompt: str) -> None:
     try:
         chatbot = st.session_state.get('chatbot_service')
         if chatbot:
+            # 응답 생성
+            response, reference_docs = chatbot.get_response(prompt)
+            
+            # 디버그 출력 추가
+            print("\n=== Saving Message ===")
+            print(f"Response: {response}")
+            print(f"Reference docs: {reference_docs}")
+            
             # 감정 분석 및 응답 생성
-            response = chatbot.get_response(prompt)
             emotions = chatbot.analyze_emotion(prompt)
             dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
             
@@ -40,13 +47,27 @@ def handle_message_submission(prompt: str) -> None:
                 {
                     "role": "assistant",
                     "content": response,
-                    "timestamp": current_time
+                    "timestamp": current_time,
+                    "reference_docs": reference_docs
                 }
             ])
+            
+            # 디버그 출력
+            print(f"Messages after update: {st.session_state.messages}")
             
             # 처리된 메시지 기록
             st.session_state.processed_messages.add(message_key)
             st.session_state.current_emotion = dominant_emotion
+            
+            # 대화 통계 업데이트
+            if 'conversation_stats' not in st.session_state:
+                st.session_state.conversation_stats = {'total': 0, 'positive': 0, 'negative': 0}
+            
+            st.session_state.conversation_stats['total'] += 1
+            if dominant_emotion in ['joy', 'love', 'surprise']:
+                st.session_state.conversation_stats['positive'] += 1
+            elif dominant_emotion in ['anger', 'sadness', 'fear']:
+                st.session_state.conversation_stats['negative'] += 1
             
         else:
             st.error("챗봇 서비스가 초기화되지 않았습니다.")

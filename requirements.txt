@@ -20,3 +20,5 @@ pydub
 ffmpeg-python
 transformers
 SpeechRecognition
+pinecone-client
+sentence-transformers

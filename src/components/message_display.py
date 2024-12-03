@@ -27,12 +27,76 @@ def get_emotion_color(emotion: str) -> str:
 def display_message(message: dict, persona: str = "default"):
     """Display chat message with persona-based styling"""
     try:
-        content = message.get('content', '')
+        content = message.get('content', '')  # 문자열만 가져오기
+        if isinstance(content, tuple):  # 튜플인 경우 첫 번째 요소(응답 텍스트)만 사용
+            content = content[0]
+            
         timestamp = message.get('timestamp', '')
         emotion = message.get('emotion', '')
+        reference_docs = message.get('reference_docs', [])
+        
+        # 챗봇 메시지
+        if message.get('role') == 'assistant':
+            persona_image = PERSONA_IMAGES.get(persona)
+            
+            with st.container():
+                # 메시지 내용 표시
+                st.markdown(f"""
+                    <div style="display: flex; align-items: flex-start; margin: 16px 0; gap: 8px;">
+                        <img src="{persona_image}" style="
+                            width: 40px;
+                            height: 40px;
+                            border-radius: 50%;
+                            object-fit: cover;
+                        "/>
+                        <div style="
+                            background-color: #F0F0F0;
+                            color: black;
+                            padding: 12px 18px;
+                            border-radius: 18px;
+                            border-top-left-radius: 4px;
+                            max-width: 80%;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        ">
+                            <div style="font-size: 1rem; line-height: 1.4;">{content}</div>
+                            <div style="font-size: 0.75rem; color: #666; margin-top: 6px;">{timestamp}</div>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                # 참고 문서가 있는 경우에만 expander 표시
+                if reference_docs:
+                    with st.expander("🔍 참고한 문서"):
+                        for idx, doc in enumerate(reference_docs, 1):
+                            disease = doc['metadata'].get('disease', '')
+                            tab = doc['metadata'].get('tab', '')
+                            content = doc.get('content', '').strip()
+                            
+                            st.markdown(f"""
+                                <div style='
+                                    background-color: #f8f9fa;
+                                    padding: 1rem;
+                                    border-radius: 0.5rem;
+                                    margin-bottom: 0.5rem;
+                                '>
+                                    <div style='
+                                        color: #1a73e8;
+                                        font-weight: 600;
+                                        margin-bottom: 0.5rem;
+                                    '>
+                                        {disease} - {tab}
+                                    </div>
+                                    <div style='
+                                        font-size: 0.9rem;
+                                        color: #202124;
+                                    '>
+                                        {content}
+                                    </div>
+                                </div>
+                            """, unsafe_allow_html=True)
         
         # 사용자 메시지
-        if message.get('role') == 'user':
+        else:
             background = get_emotion_color(emotion)
             with st.container():
                 st.markdown(f"""
@@ -63,35 +127,6 @@ def display_message(message: dict, persona: str = "default"):
                                 ">{emotion}</span>
                                 <span style="font-size: 0.75rem; color: #333;">{timestamp}</span>
                             </div>
-                        </div>
-                    </div>
-                """, unsafe_allow_html=True)
-            
-        # 챗봇 메시지
-        else:
-            # 페르소나 이미지 URL 가져오기
-            persona_image = PERSONA_IMAGES.get(persona)
-            
-            with st.container():
-                st.markdown(f"""
-                    <div style="display: flex; align-items: flex-start; margin: 16px 0; gap: 8px;">
-                        <img src="{persona_image}" style="
-                            width: 40px;
-                            height: 40px;
-                            border-radius: 50%;
-                            object-fit: cover;
-                        "/>
-                        <div style="
-                            background-color: #F0F0F0;
-                            color: black;
-                            padding: 12px 18px;
-                            border-radius: 18px;
-                            border-top-left-radius: 4px;
-                            max-width: 80%;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                        ">
-                            <div style="font-size: 1rem; line-height: 1.4;">{content}</div>
-                            <div style="font-size: 0.75rem; color: #666; margin-top: 6px;">{timestamp}</div>
                         </div>
                     </div>
                 """, unsafe_allow_html=True)
