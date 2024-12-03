@@ -6,35 +6,34 @@ from src.app.constants import PERSONA_IMAGES, PERSONA_URL_MAPPING
 # 페르소나 정보를 상수로 정의
 PERSONAS = [
     {
-        "name": "김소연 선생님", 
-        "img": PERSONA_IMAGES["김소연 선생님"],
-        "desc": "졸업해도 잊지 못해!",
-        "explanation": """[김소연 선생님]은 따뜻하고 세심한 고등학교 국어 교사로, 학생들의 학업뿐만 아니라 인생 고민까지 들어주는 멘토 역할을 합니다.
-        [김소연 선생님]은 평소 독서(특히 고전 문학), 학생 상담, 교육 심리학 연구, 가드닝에 관심이 많습니다."""
+        "name": "김서연 교수", 
+        "img": PERSONA_IMAGES["김서연 교수"],
+        "desc": "심리학과 교수 | 상담심리전문가",
+        "explanation": "20년 이상의 상담 경험을 보유한 심리학 전문가입니다. 따뜻하면서도 전문적인 관점에서 당신의 이야기를 경청하고 통찰력 있는 조언을 제공합니다."
     },
     {
-        "name": "박준호 팀장님", 
-        "img": PERSONA_IMAGES["박준호 팀장님"],
-        "desc": "밥 잘 사주고 잘생긴",
-        "explanation": """[박준호 팀장님]은 IT 회사의 팀장으로, 엄격하고 목표 지향적인 리더이지만, 후배들에게는 다정하고 상담을 잘해주는 든든한 선배입니다."""
+        "name": "박준영 멘토", 
+        "img": PERSONA_IMAGES["박준영 멘토"],
+        "desc": "리더십 코치 | 커리어 멘토",
+        "explanation": "실용적이고 체계적인 분석을 통해 당신의 성장을 돕습니다. 리더십 개발과 경력 관리에 대한 전문적인 조언을 제공합니다."
     },
     {
-        "name": "장난꾸러기 동생 민준이", 
-        "img": PERSONA_IMAGES["장난꾸러기 동생 민준이"],
-        "desc": "그거 그렇게 하는 거 아닌데?",
-        "explanation": """[민준이]는 8살 초등학교 2학년 남자아이로, 에너지가 넘치고 낙천적이며 주변 사람들에게 밝은 기운을 전파합니다."""
+        "name": "민지원 친구", 
+        "img": PERSONA_IMAGES["민지원 친구"],
+        "desc": "또래 상담사 | 공감 전문가",
+        "explanation": "편안하고 친근한 대화를 통해 당신의 고민을 함께 나누고 해결책을 모색합니다. 젊은 세대의 고민을 깊이 이해합니다."
     },
     {
-        "name": "10년지기 친구 이동환", 
-        "img": PERSONA_IMAGES["10년지기 친구 이동환"],
-        "desc": "팩트폭격 준비됐어?",
-        "explanation": """[이동환]은 29세 데이터 분석가로, 언제나 현실적이고 냉철한 조언을 아끼지 않는 친구입니다."""
+        "name": "이현우 상담가", 
+        "img": PERSONA_IMAGES["이현우 상담가"],
+        "desc": "임상심리전문가 | CBT 전문가",
+        "explanation": "객관적이고 분석적인 관점에서 문제 해결을 돕습니다. 인지행동치료와 해결중심치료 전문가입니다."
     },
     {
-        "name": "학교 후배 정서윤", 
-        "img": PERSONA_IMAGES["학교 후배 정서윤"],
-        "desc": "제가 선배 옆에 있어드릴게요!",
-        "explanation": """[정서윤]은 20세 대학생으로 문예창작학과에 재학 중입니다. 감수성이 풍부하고 낭만적인 성격으로, 상대방의 감정을 세심하게 읽고 공감하는 데 뛰어난 재능이 있습니다"""
+        "name": "정유진 카운셀러", 
+        "img": PERSONA_IMAGES["정유진 카운셀러"],
+        "desc": "예술치료사 | 감정코칭 전문가",
+        "explanation": "창의적이고 감성적인 접근으로 당신의 내면을 탐색합니다. 예술치료와 감정 표현 전문가입니다."
     },
 ]
 
@@ -42,88 +41,119 @@ def get_page_styles() -> str:
     """페이지 스타일 CSS를 반환하는 함수"""
     return """
         <style>
-        .persona-button {
-            width: 100%;
-            background-color: #4CAF50;
+        .main-header {
+            text-align: center;
+            padding: 2rem 0;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            margin: -1rem -1rem 2rem -1rem;
             color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            margin-top: 10px;
-            cursor: pointer;
         }
         
-        .persona-button:hover {
-            background-color: #45a049;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        .main-header h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            background: linear-gradient(120deg, #b3d9ff, #80bfff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         
-        img {
-            transition: transform 0.3s;
+        .main-header p {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.8);
+            max-width: 600px;
+            margin: 0 auto;
         }
         
-        img:hover {
-            transform: scale(1.05);
-        }
-                
         .persona-container {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             justify-content: center;
-            align-items: center;
-            height: auto; 
+            gap: 1.5rem;
+            padding: 0 2rem;
+            margin-top: 2rem;
+            flex-wrap: nowrap;
+            overflow-x: auto;
         }
-                
-        #hover-info {
-            font-size: 1.2em;
-            color: #333333;
-            position: fixed;
-            top: 0;
-            left: 0;
+        
+        .persona-card {
+            background: #2d2d2d;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 280px;
+            max-width: 280px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .persona-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .persona-image {
             width: 100%;
-            background-color: rgba(255, 255, 255, 0.9);
-            text-align: center;
-            padding: 10px;
-            z-index: 1000;
+            height: 200px;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            object-fit: cover;
+        }
+        
+        .persona-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+        
+        .persona-desc {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 1rem;
+        }
+        
+        .persona-explanation {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin: 0.5rem 0;
+            flex-grow: 1;
         }
         </style>
     """
 
 def render_home():
-    """홈페이지 렌더���"""
+    """홈페이지 렌더링"""
     # 페이지 헤더
     st.markdown("""
-        <h1 style='text-align: center; color: white;'>감정을 치유하는 챗봇</h1>
-        <p style='text-align: center; color: rgba(255, 255, 255, 0.8); font-size: 1.2em;'>
-            당신의 이야기를 들어줄 상담사를 선택해주세요
-        </p>
+        <div class="main-header">
+            <h1>AI 감정 케어 서비스</h1>
+            <p>당신의 이야기에 귀 기울여줄 상담 파트너를 선택해주세요</p>
+        </div>
     """, unsafe_allow_html=True)
 
     # 스타일 적용
     st.markdown(get_page_styles(), unsafe_allow_html=True)
 
-    # 페르소나 선택 섹션
+    # 페르소나 선택 섹션을 가로로 배치
     cols = st.columns(5)
+    
     for idx, persona in enumerate(PERSONAS):
         with cols[idx]:
-            container = st.container()
+            st.markdown(f"""
+                <div class="persona-card">
+                    <img src="{persona['img']}" class="persona-image" alt="{persona['name']}"/>
+                    <div class="persona-title">{persona['name']}</div>
+                    <div class="persona-desc">{persona['desc']}</div>
+                    <div class="persona-explanation">{persona['explanation']}</div>
+                </div>
+            """, unsafe_allow_html=True)
             
-            # 이미지 표시
-            container.image(
-                persona["img"],
-                use_column_width=True,
-                caption=persona["desc"]
-            )
-            
-            # 디튼 클릭으로 페르소나 선택
-            if container.button(
-                f"{persona['desc']}\n{persona['name']}", 
-                key=f"persona_button_{idx}",
-                use_container_width=True
-            ):
+            # Streamlit 버튼으로 변경
+            if st.button("대화 시작하기", key=f"persona_button_{idx}"):
                 # 세션 상태 초기화
                 clear_session_state()
                 
@@ -131,13 +161,8 @@ def render_home():
                 initialize_session_state(persona['name'])
                 
                 # URL 파라미터 설정
-                persona_url = PERSONA_URL_MAPPING[persona['name']]
                 st.query_params["page"] = "chat"
-                st.query_params["persona"] = persona_url
+                st.query_params["persona"] = PERSONA_URL_MAPPING[persona['name']]
                 
                 # 페이지 새로고침
                 st.rerun()
-
-    # 세션 상태 초기화
-    if 'selected_persona' not in st.session_state:
-        st.session_state.selected_persona = None
