@@ -82,11 +82,12 @@ def get_page_styles() -> str:
             padding: 1.5rem;
             transition: all 0.3s ease;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            min-width: 280px;
-            max-width: 280px;
-            height: 400px;
+            min-width: 300px;
+            max-width: 300px;
+            height: 650px;
             display: flex;
             flex-direction: column;
+            cursor: pointer;
         }
         
         .persona-card:hover {
@@ -95,32 +96,46 @@ def get_page_styles() -> str:
             border-color: rgba(255, 255, 255, 0.2);
         }
         
-        .persona-image {
-            width: 100%;
-            height: 200px;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            object-fit: cover;
-        }
-        
-        .persona-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: white;
-            margin-bottom: 0.5rem;
-        }
-        
-        .persona-desc {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
+        .persona-content {
+            flex-grow: 1;
             margin-bottom: 1rem;
         }
         
         .persona-explanation {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.6);
-            margin: 0.5rem 0;
-            flex-grow: 1;
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0.8rem 0;
+            line-height: 1.6rem;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 6;
+            -webkit-box-orient: vertical;
+        }
+        
+        .persona-image {
+            width: 100%;
+            height: 280px;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            object-fit: cover;
+            object-position: center;
+        }
+        
+        .persona-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 1rem;
+            height: 2.2rem;
+            line-height: 2.2rem;
+        }
+        
+        .persona-desc {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 1.2rem;
+            height: 3.2rem;
+            line-height: 1.6rem;
         }
         </style>
     """
@@ -143,26 +158,16 @@ def render_home():
     
     for idx, persona in enumerate(PERSONAS):
         with cols[idx]:
-            st.markdown(f"""
-                <div class="persona-card">
-                    <img src="{persona['img']}" class="persona-image" alt="{persona['name']}"/>
-                    <div class="persona-title">{persona['name']}</div>
-                    <div class="persona-desc">{persona['desc']}</div>
-                    <div class="persona-explanation">{persona['explanation']}</div>
-                </div>
+            # 클릭 가능한 카드 렌더링
+            card_clicked = st.markdown(f"""
+                <a href="?page=chat&persona={PERSONA_URL_MAPPING[persona['name']]}" style="text-decoration: none;">
+                    <div class="persona-card">
+                        <div class="persona-content">
+                            <img src="{persona['img']}" class="persona-image" alt="{persona['name']}"/>
+                            <div class="persona-title">{persona['name']}</div>
+                            <div class="persona-desc">{persona['desc']}</div>
+                            <div class="persona-explanation">{persona['explanation']}</div>
+                        </div>
+                    </div>
+                </a>
             """, unsafe_allow_html=True)
-            
-            # Streamlit 버튼으로 변경
-            if st.button("대화 시작하기", key=f"persona_button_{idx}"):
-                # 세션 상태 초기화
-                clear_session_state()
-                
-                # 새로운 페르소나로 초기화
-                initialize_session_state(persona['name'])
-                
-                # URL 파라미터 설정
-                st.query_params["page"] = "chat"
-                st.query_params["persona"] = PERSONA_URL_MAPPING[persona['name']]
-                
-                # 페이지 새로고침
-                st.rerun()
