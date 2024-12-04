@@ -11,7 +11,7 @@ import torchaudio.transforms as T
 
 from src.core.services.chatbot_service import ChatbotService
 from src.app.config import OpenAIConfig
-from src.utils.audio_handler import process_audio_file
+from src.utils.audio_handler import process_recorded_audio, predict_audio_emotion, AudioRecorder
 from src.components.message_display import apply_chat_styles, display_message, get_emotion_color
 from src.core.services.personas import PERSONAS
 from src.utils.state_management import (
@@ -160,56 +160,6 @@ def update_conversation_stats(emotion: str):
     elif emotion in negative_emotions:
         st.session_state.conversation_stats['negative'] += 1
 
-def handle_audio_upload(uploaded_audio):
-    """음성 파일 업로드를 처리합니다."""
-    temp_audio_path = "temp_audio.wav"
-    try:
-        with open(temp_audio_path, "wb") as f:
-            f.write(uploaded_audio.getbuffer())
-
-        # 음성 -> 텍스트 변환
-        with st.spinner("음성을 텍스트로 변환 중..."):
-            audio_text = process_audio_file(uploaded_audio.read(), temp_audio_path)
-            if not audio_text:
-                st.warning("음성에서 텍스트를 감지할 수 없습니다.")
-                return
-
-        # 감정 분석
-        with st.spinner("감정 분석 중..."):
-            audio_emotion = predict_audio_emotion(temp_audio_path)
-            if not audio_emotion:
-                st.warning("음성 감정을 분석할 수 없습니다.")
-                return
-
-        # 감정 �� 업데이트
-        st.session_state.current_emotion = audio_emotion
-        update_conversation_stats(audio_emotion)
-
-        # 선택된 페르소나 가져오기
-        persona_name = st.session_state.get("selected_persona", DEFAULT_PERSONA)
-
-        # GPT 응답 생성
-        with st.spinner("GPT 응답 생성 중..."):
-            gpt_prompt = (
-                f"The user uploaded an audio file. Here is the transcribed text: '{audio_text}'.\n"
-                f"The detected emotion is '{audio_emotion}'.\n"
-                f"Respond to the user in the selected persona: {persona_name}."
-            )
-            chatbot = st.session_state.chatbot_service
-            gpt_response = chatbot.get_response(gpt_prompt, persona_name)
-
-        # 메시지 업데이트
-        add_chat_message("user", f"[음성 파일] 텍스트: {audio_text}", audio_emotion)
-        add_chat_message("assistant", gpt_response)
-
-    except Exception as e:
-        st.error(f"오류 발생: {e}")
-
-    finally:
-        if os.path.exists(temp_audio_path):
-            os.remove(temp_audio_path)
-        st.rerun()
-
 def render_chat_area():
     """채팅 영역을 렌더링합니다."""
     st.title("채팅")
@@ -232,13 +182,64 @@ def render_chat_area():
             display_message(message, persona=st.session_state.selected_persona)
 
     # 채팅 입력 처리
-    chat_input = st.chat_input("메시지를 입력하세요...")
+    col1, col2, col3 = st.columns([8, 1.2, 1.2])
+    
+    with col1:
+        chat_input = st.text_input("메시지를 입력하세요...", key="chat_input", label_visibility="collapsed")
+    
+    with col2:
+        # 녹음 상태 초기화
+        if 'is_recording' not in st.session_state:
+            st.session_state.is_recording = False
+            
+        # 마이크 버튼
+        mic_clicked = st.button(
+            "⏺️ 녹음 중지" if st.session_state.is_recording else "🎤 음성 입력",
+            help="클릭하여 녹음 시작/중지",
+            key="mic_button",
+            on_click=lambda: None  # 상태 변경 방지
+        )
+        
+        if mic_clicked:
+            if not st.session_state.is_recording:
+                # 녹음 시작
+                st.session_state.is_recording = True
+                st.session_state.audio_recorder = AudioRecorder()
+                st.session_state.audio_recorder.start_recording()
+                st.rerun()
+            else:
+                # 녹음 중지 및 처리
+                st.session_state.is_recording = False
+                audio_text, audio_emotion = process_recorded_audio()
+                
+                if audio_text:
+                    # 현재 상태 저장
+                    current_persona = st.session_state.selected_persona
+                    
+                    # GPT 응답 생성
+                    response = st.session_state.chatbot_service.get_response(audio_text, current_persona)
+                    
+                    # 대화 통계 업데이트
+                    update_conversation_stats(audio_emotion)
+                    
+                    # 메시지 추가
+                    add_chat_message("user", f"[음성] {audio_text}", audio_emotion)
+                    add_chat_message("assistant", response)
+                    
+                    # 상태 업데이트
+                    st.session_state.current_emotion = audio_emotion
+                    st.session_state.last_message = audio_text
+                    st.rerun()
+                else:
+                    st.error("음성을 인식할 수 없습니다. 다시 시도해주세요.")
+                    st.session_state.is_recording = False
+                    st.rerun()
+    
+    with col3:
+        send_clicked = st.button("전송", use_container_width=True)
     
     # 새 메시지가 있고 아직 처리되지 않았다면
-    if (chat_input and 
-        chat_input.strip() and 
-        chat_input != st.session_state.get('last_message')):
-        
+    if (send_clicked or chat_input) and chat_input.strip() and chat_input != st.session_state.get('last_message'):
         try:
             # 현재 상태 저장
             current_persona = st.session_state.selected_persona
@@ -267,7 +268,7 @@ def render_chat_area():
             
         except Exception as e:
             st.error(f"메시지 처리 중 오류가 발생했습니다: {str(e)}")
-    
+
     # 화면 갱신이 필요한 경우
     if st.session_state.get('needs_rerun', False):
         st.session_state.needs_rerun = False
@@ -288,12 +289,21 @@ def render_chat_page():
     # URL의 영어 이름을 한글 페르소나 이름으로 변환
     selected_persona = PERSONA_NAME_MAPPING.get(persona_url, DEFAULT_PERSONA)
     
-    # 세션 상태 확인 및 초기화
-    if not st.session_state.get('initialized'):
-        initialize_session_state(selected_persona)
-    elif st.session_state.get('selected_persona') != selected_persona:
+    # 페르소나가 변경되었거나 초기화되지 않은 경우에만 상태 초기화
+    if (not st.session_state.get('initialized') or 
+        st.session_state.get('selected_persona') != selected_persona):
+        # 채팅 기록 유지를 위한 임시 저장
+        old_messages = st.session_state.get('messages', [])
+        
+        # 상태 초기화
         clear_session_state()
+        
+        # 새로운 페르소나로 초기화
         initialize_session_state(selected_persona)
+        
+        # 이전 채팅 기록 복원 (필요한 경우)
+        if old_messages and st.session_state.get('selected_persona') == selected_persona:
+            st.session_state.messages = old_messages
     
     # URL 파라미터 설정
     st.query_params["page"] = "chat"
@@ -314,34 +324,31 @@ def render_sidebar():
                 del st.session_state[key]
             
             # URL 파라미터 초기화
-            st.query_params.clear()
-            st.query_params["page"] = "home"  # 홈 페이지로 이동
+            for param in list(st.query_params.keys()):
+                del st.query_params[param]
+            
+            # 홈 페이지로 이동하기 위한 파라미터 설정
+            st.query_params["page"] = "home"
             st.rerun()
+            return
 
         st.markdown("### 사용 방법")
         st.markdown("""
         1. 채팅창에 현재 기분이나 상황을 입력하세요.
-        2. 음성 파일을 업로드하여 감정을 분석할 수 있습니다.
+        2. 마이크 버튼을 눌러 음성으로 대화할 수 있습니다.
         3. 챗봇이 감정을 분석하고 공감적인 대화를 제공합니다.
-        4. 필요한 경우 적절한 조언이나 위로를 을 수 있습니다.
+        4. 필요한 경우 적절한 조언이나 위로를 받을 수 있습니다.
         """)
 
         # 현재 페르소나 표시
         current_persona = st.session_state.get('selected_persona', st.query_params.get("persona"))
-        st.markdown(f"### 현재 대화 상대: {current_persona}")
+        st.markdown(f"### 현재 대 상대: {current_persona}")
 
         # 상태 초기화 및 표시
         ensure_state_initialization('current_emotion', DEFAULT_EMOTION)
         ensure_state_initialization('conversation_stats', {'total': 0, 'positive': 0, 'negative': 0})
         render_emotion_indicator(st.session_state.current_emotion)
         render_conversation_stats(st.session_state.conversation_stats)
-
-        # 음성 파일 업로드
-        st.markdown("### 음성 파일 업로드")
-        uploaded_audio = st.file_uploader("지원 형식: WAV", type=["wav"])
-        if uploaded_audio is not None and uploaded_audio != st.session_state.get('last_uploaded_audio'):
-            st.session_state.last_uploaded_audio = uploaded_audio
-            handle_audio_upload(uploaded_audio)
 
 def main():
     """메인 애플리케이션을 실행합니다."""
