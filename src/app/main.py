@@ -36,6 +36,13 @@ MODEL_NAME = "forwarder1121/ast-finetuned-model"
 processor = AutoProcessor.from_pretrained(MODEL_NAME)
 model = AutoModelForAudioClassification.from_pretrained(MODEL_NAME)
 
+AUDIO_ENABLED = True
+try:
+    from src.utils.audio_handler import process_recorded_audio, predict_audio_emotion, AudioRecorder
+except ImportError:
+    AUDIO_ENABLED = False
+    st.warning("Audio functionality is disabled. Please install required dependencies.")
+
 def get_emotion_from_gpt(prompt: str) -> str:
     """
     GPT를 통해 텍스트의 감정을 분석합니다.
@@ -188,52 +195,55 @@ def render_chat_area():
         chat_input = st.text_input("메시지를 입력하세요...", key="chat_input", label_visibility="collapsed")
     
     with col2:
-        # 녹음 상태 초기화
-        if 'is_recording' not in st.session_state:
-            st.session_state.is_recording = False
-            
-        # 마이크 버튼
-        mic_clicked = st.button(
-            "⏺️ 녹음 중지" if st.session_state.is_recording else "🎤 음성 입력",
-            help="클릭하여 녹음 시작/중지",
-            key="mic_button",
-            on_click=lambda: None  # 상태 변경 방지
-        )
-        
-        if mic_clicked:
-            if not st.session_state.is_recording:
-                # 녹음 시작
-                st.session_state.is_recording = True
-                st.session_state.audio_recorder = AudioRecorder()
-                st.session_state.audio_recorder.start_recording()
-                st.rerun()
-            else:
-                # 녹음 중지 및 처리
+        if AUDIO_ENABLED:
+            # 녹음 상태 초기화
+            if 'is_recording' not in st.session_state:
                 st.session_state.is_recording = False
-                audio_text, audio_emotion = process_recorded_audio()
                 
-                if audio_text:
-                    # 현재 상태 저장
-                    current_persona = st.session_state.selected_persona
-                    
-                    # GPT 응답 생성
-                    response = st.session_state.chatbot_service.get_response(audio_text, current_persona)
-                    
-                    # 대화 통계 업데이트
-                    update_conversation_stats(audio_emotion)
-                    
-                    # 메시지 추가
-                    add_chat_message("user", f"[음성] {audio_text}", audio_emotion)
-                    add_chat_message("assistant", response)
-                    
-                    # 상태 업데이트
-                    st.session_state.current_emotion = audio_emotion
-                    st.session_state.last_message = audio_text
+            # 마이크 버튼
+            mic_clicked = st.button(
+                "⏺️ 녹음 중지" if st.session_state.is_recording else "🎤 음성 입력",
+                help="클릭하여 녹음 시작/중지",
+                key="mic_button"
+            )
+            
+            if mic_clicked:
+                if not st.session_state.is_recording:
+                    # 녹음 시작
+                    st.session_state.is_recording = True
+                    st.session_state.audio_recorder = AudioRecorder()
+                    st.session_state.audio_recorder.start_recording()
                     st.rerun()
                 else:
-                    st.error("음성을 인식할 수 없습니다. 다시 시도해주세요.")
+                    # 녹음 중지 및 처리
                     st.session_state.is_recording = False
-                    st.rerun()
+                    audio_text, audio_emotion = process_recorded_audio()
+                    
+                    if audio_text:
+                        # 현재 상태 저장
+                        current_persona = st.session_state.selected_persona
+                        
+                        # GPT 응답 생성
+                        response = st.session_state.chatbot_service.get_response(audio_text, current_persona)
+                        
+                        # 대화 통계 업데이트
+                        update_conversation_stats(audio_emotion)
+                        
+                        # 메시지 추가
+                        add_chat_message("user", f"[음성] {audio_text}", audio_emotion)
+                        add_chat_message("assistant", response)
+                        
+                        # 상태 업데이트
+                        st.session_state.current_emotion = audio_emotion
+                        st.session_state.last_message = audio_text
+                        st.rerun()
+                    else:
+                        st.error("음성을 인식할 수 없습니다. 다시 시도해주세요.")
+                        st.session_state.is_recording = False
+                        st.rerun()
+        else:
+            # 오디오 기능이 비활성화된 경우 버튼을 비활성화 상태로 표시
+            st.button("🎤 음성 입력", disabled=True, help="음성 입력 기능을 사용할 수 없습니다")
     
     with col3:
         send_clicked = st.button("전송", use_container_width=True)
