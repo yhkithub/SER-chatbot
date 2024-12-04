@@ -20,5 +20,3 @@ pinecone-client>=3.0.0
 sentence-transformers>=2.2.2
 requests>=2.31.0
 openai-whisper>=20231117
-streamlit-webrtc>=0.47.1
-av>=10.0.0  # 오디오/비디오 처리를 위한 라이브러리
