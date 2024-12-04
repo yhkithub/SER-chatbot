@@ -1,170 +1,157 @@
 
-![QR](https://github.com/user-attachments/assets/d4189447-4442-4ef3-976e-e7675a5a63c4)
+# SER-Chatbot (Speech Emotion Recognition Chatbot)
 
-# 감정인식 챗봇 (Emotion-Aware Chatbot) 🤖
+![QR Code](https://github.com/user-attachments/assets/d4189447-4442-4ef3-976e-e7675a5a63c4)
 
-## 📌 프로젝트 소개
+## 프로젝트 소개
 
-이 프로젝트는 **사용자의 감정을 인식**하고 **공감적인 대화**를 나눌 수 있는 AI 챗봇입니다. **GPT-4**와 **감정 분석 모델**을 활용하여 사용자의 감정 상태를 파악하고 적절한 응답을 제공합니다.
+**SER-Chatbot**은 사용자의 **음성**과 **텍스트**를 통해 감정을 인식하고, 공감적인 대화를 제공하는 AI 챗봇 서비스입니다. 다양한 **페르소나**를 통해 사용자에게 맞춤형 상담과 대화를 제공합니다.
 
-## 🌟 주요 기능
+## 시스템 아키텍처
 
--   🎯 **실시간 감정 분석**
--   💬 **맥락을 이해하는 대화**
--   📊 **대화 통계 추적**
--   🤝 **공감적인 응답 생성**
+![System Architecture](https://github.com/user-attachments/assets/15f1a560-6c47-4460-9790-5ef860ba3799)
 
-## 🛠 기술 스택
+## 주요 기능
 
--   **Frontend**: Streamlit
--   **Backend**: Python
--   **AI Models**:
-    -   OpenAI GPT-4
-    -   DistilRoBERTa (감정 분석)
--   **Dependencies**: PyTorch, Transformers, Langchain
+- **음성/텍스트 기반 감정 인식**
+- **다중 페르소나 기반 대화**
+- **실시간 감정 분석 및 통계**
+- **RAG(Retrieval-Augmented Generation) 기반 맥락 인식**
+- **웹 기반 실시간 음성 입력**
 
-## 🚀 설치 방법
+## 페르소나 목록
 
-1. ### **저장소 클론**
+- **김서연 교수**: 심리학과 교수 | 상담심리전문가
+- **박준영 멘토**: 리더십 코치 | 커리어 멘토
+- **민지원 친구**: 또래 상담사 | 공감 전문가
+- **이현우 상담가**: 임상심리전문가 | CBT 전문가
+- **정유진 카운셀러**: 예술치료사 | 감정코칭 전문가
 
-    ```bash
-    git clone https://github.com/your-username/emotion-aware-chatbot.git
-    cd emotion-aware-chatbot
-    ```
+## 기술 스택
 
-2. ### **가상환경 생성 및 활성화**
+- **Frontend**: Streamlit
+- **Backend**: Python
+- **AI/ML**:
+  - OpenAI GPT-4
+  - Whisper (음성 인식)
+  - Hugging Face Transformers (감정 분석)
+- **Vector Database**: Pinecone
+- **Audio Processing**: WebRTC
 
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # Windows: venv\Scripts\activate
-    ```
+## 설치 방법
 
-3. ### **필요한 패키지 설치**
+1. **저장소 클론**
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+   ```bash
+   git clone https://github.com/your-username/ser-chatbot.git
+   cd ser-chatbot
+   ```
 
-4. ### **환경 변수 설정**
+2. **가상환경 생성 및 활성화**
 
-    `.env` 파일을 생성하고 다음 내용을 추가합니다:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # Windows의 경우: venv\Scripts\activate
+   ```
 
-    ```env
-    OPENAI_API_KEY=your_openai_api_key
-    HUGGINGFACEHUB_API_TOKEN=your_huggingface_token
-    ```
+3. **의존성 설치**
 
-## 🏃‍♀️ 실행 방법
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **환경 변수 설정**
+
+   `.env` 파일을 생성하고 다음 내용을 추가합니다:
+
+   ```env
+   OPENAI_API_KEY=your-openai-api-key
+   PINECONE_API_KEY=your-pinecone-api-key
+   PINECONE_ENVIRONMENT=your-pinecone-environment
+   PINECONE_INDEX_NAME=your-pinecone-index-name
+   ```
+
+## 실행 방법
 
 ```bash
-streamlit run run.py
+python app.py
 ```
 
-## 📂 프로젝트 구조
+## 환경 변수 설정
 
-```plaintext
-emotion-aware-chatbot/
-├── src/
-│   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py
-│   │   └── config.py
-│   ├── core/
-│   │   ├── models/
-│   │   │   └── document.py
-│   │   └── services/
-│   │       └── chatbot_service.py
-│   ├── components/
-│   │   ├── chat_interface.py
-│   │   ├── message_display.py
-│   │   └── sidebar.py
-│   └── utils/
-│       ├── initialization.py
-│       └── message_handler.py
-├── .env
-├── requirements.txt
-├── run.py
-└── README.md
+- `OPENAI_API_KEY`: OpenAI API 키
+- `PINECONE_API_KEY`: Pinecone API 키
+- `PINECONE_ENVIRONMENT`: Pinecone 환경
+- `PINECONE_INDEX_NAME`: Pinecone 인덱스 이름
+
+## 프로젝트 구조
+
+```
+ser-chatbot/
+├── app.py                # 메인 애플리케이션 파일
+├── requirements.txt      # 필요한 라이브러리 목록
+├── README.md             # 프로젝트 설명서
+├── services/             # 서비스 로직 폴더
+│   ├── __init__.py
+│   ├── emotion_recognition.py
+│   ├── persona_manager.py
+│   └── chat_engine.py
+└── assets/               # 이미지 및 기타 자산
 ```
 
-### 📁 디렉토리 및 파일 설명
+## 라이선스
 
--   **src/** - 소스 코드의 메인 디렉토리
-    -   **app/** - 애플리케이션 설정 및 실행 코드
-        -   **main.py** - 앱의 메인 실행 파일
-        -   **config.py** - 설정 관리 (API 키, 모델 설정 등)
-    -   **core/** - 핵심 비즈니스 로직
-        -   **models/** - 데이터 모델 정의
-        -   **services/** - 챗봇 서비스 로직 (감정 분석, 응답 생성 등)
-    -   **components/** - UI 컴포넌트
-        -   **chat_interface.py** - 채팅 인터페이스 구현
-        -   **message_display.py** - 메시지 표시 로직
-        -   **sidebar.py** - 사이드바 구현
-    -   **utils/** - 유틸리티 함수 모음
-        -   **initialization.py** - 초기화 함수
-        -   **message_handler.py** - 메시지 처리 유틸리티
--   **.env** - 환경 변수 파일 (API 키 등)
--   **requirements.txt** - 필요한 패키지 목록
--   **run.py** - 애플리케이션 실행 파일
--   **README.md** - 프로젝트 설명서
+이 프로젝트는 [MIT 라이선스](LICENSE)를 따릅니다.
 
-> **Note**: 코드의 역할과 책임이 명확하게 분리되어 있어 유지보수와 확장이 용이합니다.
+## 기여 방법
 
-## 🔍 주요 컴포넌트 설명
+1. 저장소를 포크합니다.
+2. 새로운 기능 브랜치를 만듭니다.
 
-### **1. ChatbotService**
+   ```bash
+   git checkout -b feature/your-feature
+   ```
 
--   **사용자 입력 처리**
--   **감정 분석 수행**
--   **GPT-4를 통한 응답 생성**
+3. 변경 사항을 커밋합니다.
 
-### **2. 감정 분석**
+   ```bash
+   git commit -m "Add your feature"
+   ```
 
--   **DistilRoBERTa 기반 감정 분석 모델 사용**
--   **7가지 감정 분류**: 기쁨, 슬픔, 분노, 공포, 혐오, 놀람, 중립
+4. 브랜치에 푸시합니다.
 
-### **3. 사용자 인터페이스**
+   ```bash
+   git push origin feature/your-feature
+   ```
 
--   **Streamlit 기반의 직관적인 채팅 인터페이스**
--   **실시간 감정 상태 표시**
--   **대화 이력 관리 기능**
+5. 새로운 Pull Request를 생성합니다.
 
-## ⚙️ 환경 요구사항
+## 문의사항
 
--   **Python 3.8 이상**
--   **CUDA 지원** (선택 사항)
--   **최소 4GB RAM**
--   **OpenAI API 키**
--   **Hugging Face API 토큰**
+- **버그 보고 및 기능 제안**: [이슈 트래커](https://github.com/your-username/ser-chatbot/issues)를 이용해주세요.
+- **기타 문의사항**: 이메일 `your-email@example.com`로 연락주시기 바랍니다.
 
-## 📄 라이선스
+## 주의사항
 
-이 프로젝트는 **MIT 라이선스**를 따릅니다.
+- **음성 인식 기능**은 **Chrome 브라우저**에서 가장 잘 작동합니다.
+- **마이크 접근 권한**이 필요합니다.
+- **API 키**는 보안을 위해 반드시 환경 변수로 관리해야 합니다.
 
-## 🤝 기여 방법
+## 향후 계획
 
-1. **저장소 포크**
+- **다국어 지원 추가**
+- **음성 감정 인식 정확도 개선**
+- **추가 페르소나 개발**
+- **모바일 최적화**
 
-2. **기능 브랜치 생성**
+## 감사의 글
 
-    ```bash
-    git checkout -b feature/새로운기능
-    ```
+이 프로젝트는 다음 **오픈소스 프로젝트**들의 도움을 받았습니다:
 
-3. **변경 사항 커밋**
+- [Streamlit](https://streamlit.io/)
+- [OpenAI](https://openai.com/)
+- [Hugging Face](https://huggingface.co/)
+- [Pinecone](https://www.pinecone.io/)
+- [WebRTC](https://webrtc.org/)
 
-    ```bash
-    git commit -m '새로운 기능 추가'
-    ```
-
-4. **브랜치에 푸시**
-
-    ```bash
-    git push origin feature/새로운기능
-    ```
-
-5. **Pull Request 생성**
-
-## 📬 문의사항
-
-프로젝트에 대한 문의는 **Issues** 탭에 등록해 주세요.
+---
