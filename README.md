@@ -1,3 +1,6 @@
+
+![QR](https://github.com/user-attachments/assets/d4189447-4442-4ef3-976e-e7675a5a63c4)
+
 # 감정인식 챗봇 (Emotion-Aware Chatbot) 🤖
 
 ## 📌 프로젝트 소개
