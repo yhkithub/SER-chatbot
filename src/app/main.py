@@ -8,6 +8,9 @@ from datetime import datetime
 import time
 from transformers import AutoModelForAudioClassification, AutoProcessor
 import torchaudio.transforms as T
+from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
+import av
+import queue
 
 from src.core.services.chatbot_service import ChatbotService
 from src.app.config import OpenAIConfig
@@ -167,6 +170,15 @@ def update_conversation_stats(emotion: str):
     elif emotion in negative_emotions:
         st.session_state.conversation_stats['negative'] += 1
 
+# 오디오 처리를 위한 클래스
+class AudioProcessor:
+    def __init__(self):
+        self.audio_frames = queue.Queue()
+        
+    def recv(self, frame):
+        self.audio_frames.put(frame)
+        return frame
+
 def render_chat_area():
     """채팅 영역을 렌더링합니다."""
     st.title("채팅")
@@ -195,30 +207,25 @@ def render_chat_area():
         chat_input = st.text_input("메시지를 입력하세요...", key="chat_input", label_visibility="collapsed")
     
     with col2:
-        if AUDIO_ENABLED:
-            # 녹음 상태 초기화
-            if 'is_recording' not in st.session_state:
-                st.session_state.is_recording = False
-                
-            # 마이크 버튼
-            mic_clicked = st.button(
-                "⏺️ 녹음 중지" if st.session_state.is_recording else "🎤 음성 입력",
-                help="클릭하여 녹음 시작/중지",
-                key="mic_button"
-            )
-            
-            if mic_clicked:
-                if not st.session_state.is_recording:
-                    # 녹음 시작
-                    st.session_state.is_recording = True
-                    st.session_state.audio_recorder = AudioRecorder()
-                    st.session_state.audio_recorder.start_recording()
-                    st.rerun()
-                else:
-                    # 녹음 중지 및 처리
-                    st.session_state.is_recording = False
-                    audio_text, audio_emotion = process_recorded_audio()
-                    
+        # WebRTC 오디오 스트리머
+        webrtc_ctx = webrtc_streamer(
+            key="audio-recorder",
+            mode=WebRtcMode.SENDONLY,
+            audio_receiver_size=256,
+            rtc_configuration=RTCConfiguration(
+                {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+            ),
+            media_stream_constraints={"video": False, "audio": True},
+            async_processing=True,
+        )
+        
+        if webrtc_ctx.audio_receiver:
+            try:
+                audio_frames = webrtc_ctx.audio_receiver.get_frames(timeout=1)
+                # 여기서 오디오 프레임을 처리하고 텍스트로 변환
+                if audio_frames:
+                    # Whisper 모델을 사용하여 음성을 텍스트로 변환
+                    audio_text = process_audio_frames(audio_frames)
                     if audio_text:
                         # 현재 상태 저장
                         current_persona = st.session_state.selected_persona
@@ -226,24 +233,13 @@ def render_chat_area():
                         # GPT 응답 생성
                         response = st.session_state.chatbot_service.get_response(audio_text, current_persona)
                         
-                        # 대화 통계 업데이트
-                        update_conversation_stats(audio_emotion)
-                        
-                        # 메시지 추가
-                        add_chat_message("user", f"[음성] {audio_text}", audio_emotion)
+                        # 대시지 추가
+                        add_chat_message("user", f"[음성] {audio_text}")
                         add_chat_message("assistant", response)
                         
-                        # 상태 업데이트
-                        st.session_state.current_emotion = audio_emotion
-                        st.session_state.last_message = audio_text
                         st.rerun()
-                    else:
-                        st.error("음성을 인식할 수 없습니다. 다시 시도해주세요.")
-                        st.session_state.is_recording = False
-                        st.rerun()
-        else:
-            # 오디오 기능이 비활성화된 경우 버튼을 비활성화 상태로 표시
-            st.button("🎤 음성 입력", disabled=True, help="음성 입력 기능을 사용할 수 없습니다")
+            except queue.Empty:
+                pass
     
     with col3:
         send_clicked = st.button("전송", use_container_width=True)
