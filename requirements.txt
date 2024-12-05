@@ -23,3 +23,4 @@ openai-whisper>=20231117
 audio-recorder-streamlit>=0.0.8
 sounddevice
 whisper
+streamlit_audio_recorder
