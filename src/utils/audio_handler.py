@@ -3,117 +3,131 @@ import torch
 import os
 from transformers import AutoModelForAudioClassification, AutoProcessor
 from pydub import AudioSegment
-import sounddevice as sd
-import numpy as np
-import wave
-import streamlit as st
 import whisper
-import speech_recognition as sr
+import streamlit as st
+from streamlit_audio_recorder import audio_recorder  # 추가된 부분
 
 # 음성 감정 인식 모델 설정
 MODEL_NAME = "forwarder1121/ast-finetuned-model"
 processor = AutoProcessor.from_pretrained(MODEL_NAME)
 model = AutoModelForAudioClassification.from_pretrained(MODEL_NAME)
 
+def predict_audio_emotion(audio_path: str) -> str:
+    """음성 파일의 감정을 예측합니다."""
+    try:
+        # 기본 감정을 'Neutral'로 설정
+        default_emotion = "Neutral"
 
-class AudioRecorder:
-    def __init__(self):
-        self.frames = []
-        self.samplerate = 16000  # 샘플링 레이트
-        self.channels = 1  # 채널 수
-        self.is_recording = False
-
-    def start_recording(self):
-        """녹음을 시작합니다."""
-        print("[DEBUG] 녹음 시작")
-        self.frames = []
-        self.is_recording = True
-
-        def callback(indata, frames, time, status):
-            if self.is_recording:
-                self.frames.append(indata.copy())
-
-        self.stream = sd.InputStream(
-            samplerate=self.samplerate,
-            channels=self.channels,
-            callback=callback
+        # 음성 파일 로드
+        waveform, sample_rate = torchaudio.load(
+            audio_path,
+            backend="soundfile"  # 백엔드 명시
         )
-        self.stream.start()
-        print("[DEBUG] 스트림 시작 완료")
 
-    def stop_recording(self):
-        """녹음을 중지하고 WAV 파일로 저장합니다."""
-        print("[DEBUG] 녹음 중지")
-        self.is_recording = False
-        self.stream.stop()
-        self.stream.close()
+        # 리샘플링 (필요한 경우)
+        if sample_rate != 16000:
+            resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
+            waveform = resampler(waveform)
 
-        # WAV 파일로 저장
-        temp_path = "temp_recording.wav"
-        print(f"[DEBUG] WAV 파일 저장 중: {temp_path}")
-        with wave.open(temp_path, 'wb') as wf:
-            wf.setnchannels(self.channels)
-            wf.setsampwidth(sd.default.samplerate.bit_length() // 8)
-            wf.setframerate(self.samplerate)
-            wf.writeframes(b''.join([frame.tobytes() for frame in self.frames]))
-        print("[DEBUG] WAV 파일 저장 완료")
+        # 모델 입력 준비
+        inputs = processor(waveform.squeeze().numpy(), sampling_rate=16000, return_tensors="pt")
 
-        return temp_path
+        # 예측
+        with torch.no_grad():
+            outputs = model(**inputs)
+            predicted_label = torch.argmax(outputs.logits, dim=1).item()
 
+        # 감정 매핑
+        emotion_mapping = {
+            0: "Anger",
+            1: "Disgust",
+            2: "Fear",
+            3: "Happy",
+            4: "Neutral",
+            5: "Sad"
+        }
+
+        predicted_emotion = emotion_mapping.get(predicted_label, default_emotion)
+        print(f"[DEBUG] 예측된 음성 감정: {predicted_emotion}")
+        return predicted_emotion
+
+    except Exception as e:
+        print(f"[ERROR] 음성 감정 분석 중 오류 발생: {str(e)}")
+        return default_emotion
 
 def transcribe_audio(audio_path: str) -> str:
     """오디오 파일을 텍스트로 변환합니다."""
     try:
-        recognizer = sr.Recognizer()
-        with sr.AudioFile(audio_path) as source:
-            audio_data = recognizer.record(source)
-            try:
-                return recognizer.recognize_google(audio_data, language='ko-KR')
-            except:
-                model = whisper.load_model("base")
-                result = model.transcribe(audio_path, language='ko')
-                return result.get("text", "").strip()
+        # Whisper 모델 로드
+        model = whisper.load_model("base")
+        result = model.transcribe(audio_path, language='ko')
+        text = result["text"].strip()
+        print(f"[Whisper] 변환 결과: {text}")
+        return text
+
     except Exception as e:
-        print(f"[ERROR] 음성 변환 오류: {e}")
+        print(f"[ERROR] 음성 변환 중 오류 발생: {str(e)}")
         return None
 
-
-def predict_audio_emotion(audio_path: str) -> str:
-    """오디오 파일의 감정을 예측합니다."""
+def process_recorded_audio(audio_bytes):
+    """녹음된 오디오 바이트를 처리합니다."""
     try:
-        waveform, sample_rate = torchaudio.load(audio_path, backend="soundfile")
-        if sample_rate != 16000:
-            resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
-            waveform = resampler(waveform)
-        inputs = processor(waveform.squeeze().numpy(), sampling_rate=16000, return_tensors="pt")
-        with torch.no_grad():
-            outputs = model(**inputs)
-        emotion_mapping = {
-            0: "Anger", 1: "Disgust", 2: "Fear",
-            3: "Happy", 4: "Neutral", 5: "Sad"
-        }
-        return emotion_mapping[torch.argmax(outputs.logits, dim=1).item()]
-    except Exception as e:
-        print(f"[ERROR] 감정 분석 오류: {e}")
-        return "Neutral"
+        # 오디오 바이트를 임시 파일로 저장
+        temp_audio_path = "temp_audio.wav"
+        with open(temp_audio_path, 'wb') as f:
+            f.write(audio_bytes)
 
-
-def process_recorded_audio():
-    """실시간 녹음된 오디오를 처리합니다."""
-    try:
-        if not hasattr(st.session_state, 'audio_recorder'):
-            print("[ERROR] AudioRecorder가 초기화되지 않았습니다.")
+        if not os.path.exists(temp_audio_path):
+            print("[ERROR] 오디오 파일이 생성되지 않았습니다.")
             return None, "Neutral"
 
-        recorder = st.session_state.audio_recorder
-        audio_path = recorder.stop_recording()
-        if not audio_path or not os.path.exists(audio_path):
-            return None, "Neutral"
+        # 텍스트 변환 및 감정 분석
+        text = transcribe_audio(temp_audio_path)
+        if text:
+            emotion = predict_audio_emotion(temp_audio_path)
+        else:
+            emotion = "Neutral"
 
-        text = transcribe_audio(audio_path)
-        emotion = predict_audio_emotion(audio_path)
-        os.remove(audio_path)  # 임시 파일 삭제
+        # 임시 파일 삭제
+        try:
+            os.remove(temp_audio_path)
+        except Exception as e:
+            print(f"[WARNING] 임시 파일 삭제 실패: {str(e)}")
+
         return text, emotion
+
     except Exception as e:
-        print(f"[ERROR] 오디오 처리 오류: {e}")
+        print(f"[ERROR] 전체 처리 중 오류 발생: {str(e)}")
         return None, "Neutral"
+
+# Streamlit 앱 메인 함수
+def main():
+    st.title("음성 감정 분석 및 텍스트 변환")
+
+    # 오디오 녹음 위젯 표시
+    audio_bytes = audio_recorder(
+        pause_threshold=3.0,
+        sample_rate=16000,
+        text="음성을 녹음하려면 클릭하세요",
+        icon_size="4x"
+    )
+
+    if audio_bytes:
+        # 녹음된 오디오 재생
+        st.audio(audio_bytes, format='audio/wav')
+
+        # 녹음된 오디오 처리
+        text, emotion = process_recorded_audio(audio_bytes)
+
+        # 결과 출력
+        if text:
+            st.subheader("변환된 텍스트:")
+            st.write(text)
+        else:
+            st.write("음성 인식에 실패했습니다.")
+
+        st.subheader("예측된 감정:")
+        st.write(emotion)
+
+if __name__ == "__main__":
+    main()
