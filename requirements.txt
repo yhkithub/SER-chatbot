@@ -21,4 +21,3 @@ sentence-transformers>=2.2.2
 requests>=2.31.0
 openai-whisper>=20231117
 audio-recorder-streamlit>=0.0.8
-pyaudio
