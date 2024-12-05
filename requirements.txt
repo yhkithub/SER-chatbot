@@ -1,9 +1,17 @@
-streamlit
+# pip 업그레이드 (선택 사항)
+pip>=24.3.1
+
+# 필수 패키지
+streamlit==1.40.2
 openai>=1.12.0
 python-dotenv>=1.0.0
+
+# LangChain 관련 패키지
 langchain-core>=0.1.0
 langchain-openai>=0.0.2
 langchain-community>=0.0.10
+
+# 머신 러닝 및 데이터 처리 패키지
 transformers>=4.36.0
 torch>=2.1.0
 torchaudio>=2.1.0
@@ -16,15 +24,11 @@ librosa>=0.10.0
 pydub>=0.25.1
 ffmpeg-python>=0.2.0
 SpeechRecognition>=3.10.0
-pinecone-client>=3.0.0
 sentence-transformers>=2.2.2
 requests>=2.31.0
-openai-whisper>=20231117
-audio-recorder-streamlit>=0.0.8
-streamlit
-streamlit_audio_recorder
-transformers
-torch
-torchaudio
-pydub
+
+# Whisper 패키지
 whisper
+
+# streamlit_audio_recorder를 GitHub에서 설치
+git+https://github.com/chekos/streamlit-audio-recorder.git
