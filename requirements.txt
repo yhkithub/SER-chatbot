@@ -30,5 +30,5 @@ requests>=2.31.0
 # Whisper 패키지
 whisper
 
-# streamlit_audio_recorder를 GitHub에서 설치
-git+https://github.com/chekos/streamlit-audio-recorder.git
+# 오디오 녹음 패키지
+streamlit-audiorecorder>=0.1.3
